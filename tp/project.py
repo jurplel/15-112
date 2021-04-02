@@ -20,7 +20,7 @@ def rgbToHex(r, g, b):
 
 
 def appStarted(app):
-    app.model = ply_importer.importPly("diamonti.ply")
+    app.model = ply_importer.importPly("cone.ply")
     app.cam = Vector3D(0, 0, 0)
     app.light = Vector3D(0, 0, -1)
 
@@ -33,9 +33,12 @@ def drawPolygon(app, canvas, polygon, color):
     v1 = polygon[1]
     v2 = polygon[2]
 
-
     canvas.create_polygon(v0.x, v0.y, v1.x, v1.y, v2.x, v2.y, 
                         outline=color, fill=color)
+
+def paintersAlgorithm(polyAndColor):
+    poly = polyAndColor[0]
+    return sum(vector.z for vector in poly)/3
 
 def redrawAll(app, canvas):
     readyPolys = []
@@ -91,6 +94,11 @@ def redrawAll(app, canvas):
         if len(projectedPoly) == 3:
             readyPolys.append((projectedPoly, rgbToHex(r, g, b)))
     
+    # Draw in order with painter's algorithm
+    readyPolys.sort(key=paintersAlgorithm)
+
+    # print([x[0][0].z for x in readyPolys])
+
     for poly, color in readyPolys:
         drawPolygon(app, canvas, poly, color)
 
