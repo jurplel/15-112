@@ -41,7 +41,9 @@ class Vector3D:
         self.z = matrix[2] / w
 
     def rotX(self, deg):
-        matrix = np.array([self.x, self.y, self.z])
+        matrix = self.toArray()
+        if self.hasNormals:
+            normalMatrix = self.normalsAsVec().toArray()
 
         theta = math.radians(deg)
 
@@ -56,8 +58,16 @@ class Vector3D:
         self.y = matrix[1]
         self.z = matrix[2]
 
+        if self.hasNormals:
+            normalMatrix = normalMatrix @ rotationMatrix
+            self.nx = normalMatrix[0]
+            self.ny = normalMatrix[1]
+            self.nz = normalMatrix[2]
+
     def rotY(self, deg):
-        matrix = np.array([self.x, self.y, self.z])
+        matrix = self.toArray()
+        if self.hasNormals:
+            normalMatrix = self.normalsAsVec().toArray()
 
         theta = math.radians(deg)
 
@@ -72,8 +82,16 @@ class Vector3D:
         self.y = matrix[1]
         self.z = matrix[2]
 
+        if self.hasNormals:
+            normalMatrix = normalMatrix @ rotationMatrix
+            self.nx = normalMatrix[0]
+            self.ny = normalMatrix[1]
+            self.nz = normalMatrix[2]
+
     def rotZ(self, deg):
-        matrix = np.array([self.x, self.y, self.z])
+        matrix = self.toArray()
+        if self.hasNormals:
+            normalMatrix = self.normalsAsVec().toArray()
 
         theta = math.radians(deg)
 
@@ -88,9 +106,14 @@ class Vector3D:
         self.y = matrix[1]
         self.z = matrix[2]
 
+        if self.hasNormals:
+            normalMatrix = normalMatrix @ rotationMatrix
+            self.nx = normalMatrix[0]
+            self.ny = normalMatrix[1]
+            self.nz = normalMatrix[2]
+
     def normalizeToTkinter(self, height, width):
         # Tkinter y coordinates are upside-down
-        print(self)
         self.y = -self.y
         self.y += 1
         self.y *= 0.5
@@ -100,11 +123,9 @@ class Vector3D:
         self.x *= 0.5
         self.x *= width
 
-        print(self)
-
-    # def getNormalAsVec(self):
-    #     if self.hasNormals:
-    #         return Vector3D(self.nx, self.ny, self.nz)
+    def normalsAsVec(self):
+        if self.hasNormals:
+            return Vector3D(self.nx, self.ny, self.nz)
 
     def toList(self):
         return [self.x, self.y, self.z]
@@ -131,9 +152,9 @@ class Vector3D:
 
         
         
-# def vectorDotProduct(v0: Vector3D, v1: Vector3D):
+def vectorDotProduct(v0: Vector3D, v1: Vector3D):
 
-#     return np.dot(v0, v1)
+    return np.dot(v0.toArray(), v1.toArray())
 
 
 @dataclass
