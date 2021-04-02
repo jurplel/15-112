@@ -20,7 +20,7 @@ def rgbToHex(r, g, b):
 
 
 def appStarted(app):
-    app.model = ply_importer.importPly("cube2.ply")
+    app.model = ply_importer.importPly("diamonti.ply")
     app.cam = Vector3D(0, 0, 0)
     app.light = Vector3D(0, 0, -1)
 
@@ -32,9 +32,6 @@ def drawPolygon(app, canvas, polygon, color):
     v0 = polygon[0]
     v1 = polygon[1]
     v2 = polygon[2]
-    # canvas.create_line(v0.x, v0.y, v1.x, v1.y)
-    # canvas.create_line(v1.x, v1.y, v2.x, v2.y)
-    # canvas.create_line(v2.x, v2.y, v0.x, v0.y)
 
 
     canvas.create_polygon(v0.x, v0.y, v1.x, v1.y, v2.x, v2.y, 
@@ -44,7 +41,8 @@ def redrawAll(app, canvas):
     readyPolys = []
     for poly in app.model.polys:
         projectedPoly = []
-        r, g, b = 0, 162, 255
+
+        pr, pg, pb = 0, 0, 0
 
         for i, vec in enumerate(poly):
             vector = copy.deepcopy(vec)
@@ -66,12 +64,16 @@ def redrawAll(app, canvas):
                 if camdp > 0:
                     break
                 
-                # Lighting (potential for proper smoother lighting later)
-                if i == 0:
-                    lightdp = vectorDotProduct(normals, app.light)
-                    r *= lightdp
-                    g *= lightdp
-                    b *= lightdp
+                # Flat lighting
+                r, g, b = 0, 162, 255
+                lightdp = vectorDotProduct(normals, app.light)
+                r *= lightdp
+                g *= lightdp
+                b *= lightdp
+                # Add to total r, g, b
+                pr += r
+                pg += g
+                pb += b
 
             # Projection
             fov = 90
@@ -82,6 +84,10 @@ def redrawAll(app, canvas):
 
             projectedPoly.append(vector)
 
+        # Get average rgb for vertices
+        pr /= 3
+        pg /= 3
+        pb /= 3
         if len(projectedPoly) == 3:
             readyPolys.append((projectedPoly, rgbToHex(r, g, b)))
     
