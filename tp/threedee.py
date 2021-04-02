@@ -4,10 +4,14 @@ import numpy as np
 import math
 
 class Vector3D:
-    def __init__(self, x, y, z):
+    def __init__(self, x, y, z, nx = None, ny = None, nz = None):
         self.x = x
         self.y = y
         self.z = z
+        self.nx = nx
+        self.ny = ny
+        self.nz = nz
+        self.hasNormals = nx != None
 
     @classmethod
     def fromArray(cls, array):
@@ -84,9 +88,53 @@ class Vector3D:
         self.y = matrix[1]
         self.z = matrix[2]
 
+    def normalizeToTkinter(self, height, width):
+        # Tkinter y coordinates are upside-down
+        print(self)
+        self.y = -self.y
+        self.y += 1
+        self.y *= 0.5
+        self.y *= height
+
+        self.x += 1
+        self.x *= 0.5
+        self.x *= width
+
+        print(self)
+
+    # def getNormalAsVec(self):
+    #     if self.hasNormals:
+    #         return Vector3D(self.nx, self.ny, self.nz)
+
     def toList(self):
         return [self.x, self.y, self.z]
+
+    def toArray(self):
+        return np.array([self.x, self.y, self.z])
+
+    def __str__(self):
+        return f"Vector3D({self.x}, {self.y}, {self.z})"
+
+    def __add__(self, other):
+        x = self.x + other.x
+        y = self.y + other.y
+        z = self.z + other.z
+        return Vector3D(x, y, z)
+
+    def __sub__(self, other):
+        x = self.x - other.x
+        y = self.y - other.y
+        z = self.z - other.z
+        return Vector3D(x, y, z)
+
+
+
         
+        
+# def vectorDotProduct(v0: Vector3D, v1: Vector3D):
+
+#     return np.dot(v0, v1)
+
 
 @dataclass
 class Mesh:

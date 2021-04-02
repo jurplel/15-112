@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-import threedee
+from threedee import Vector3D, Mesh
 
 # From here: https://www.cs.cmu.edu/~112/notes/notes-strings.html#basicFileIO
 def readFile(path):
@@ -18,16 +18,22 @@ def readFile(path):
 class HeaderInfo:
     vertexCount: int = -1
     faceCount: int = -1
+    hasNormals: bool = False
     endIndex: int = -1
 
 # Returns HeaderInfo dataclass
 def readHeader(fileAsString):
+    if not fileAsString.startswith("ply"):
+        raise Exception("This is not a PLY file!")
+    
     headerInfo = HeaderInfo()
     for i, line in enumerate(fileAsString.splitlines()):
         if line.startswith("element vertex"):
             headerInfo.vertexCount = int(line.split(" ")[-1])
         elif line.startswith("element face"):
             headerInfo.faceCount = int(line.split(" ")[-1])
+        elif line.startswith("property float n"):
+            headerInfo.hasNormals = True
         elif line == "end_header":
             headerInfo.endIndex = i
             return headerInfo
@@ -37,16 +43,34 @@ def readBody(headerInfo, fileAsString):
     contentStart = headerInfo.endIndex + 1
     facesStart = contentStart + headerInfo.vertexCount
 
-    vertices = []
+    vectors = []
     polygons = []
 
     lines = fileAsString.splitlines()
 
+    isNormal = False
     for lineNum in range(contentStart, facesStart):
         line = lines[lineNum]
         floats = [ float(word) for word in line.split(" ")]
-        vector = np.array(floats)
-        vertices.append(vector)
+
+        vertices = np.array(floats[0:3])
+        vector = None
+        if headerInfo.hasNormals and isNormal:
+            normal = np.array(floats[3:6])
+            vector = Vector3D(vertices[0],
+                              vertices[1],
+                              vertices[2],
+                              normal[0],
+                              normal[1],
+                              normal[2])
+        else:
+            vector = Vector3D(vertices[0],
+                    vertices[1],
+                    vertices[2])
+
+        vectors.append(vector)
+
+        isNormal = not isNormal
 
     for lineNum in range(facesStart, len(lines)):
         line = lines[lineNum]
@@ -54,13 +78,13 @@ def readBody(headerInfo, fileAsString):
         if ints[0] != 3:
             raise Exception("Face in file has more than 3 vertices!")
 
-        poly = [vertices[ints[1]], 
-                 vertices[ints[2]], 
-                 vertices[ints[3]]]
+        poly = [vectors[ints[1]], 
+                 vectors[ints[2]], 
+                 vectors[ints[3]]]
 
         polygons.append(poly)
 
-    return threedee.Mesh(polygons)
+    return Mesh(polygons)
 
 
 

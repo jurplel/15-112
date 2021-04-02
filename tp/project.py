@@ -12,6 +12,7 @@ from threedee import Vector3D
 
 def appStarted(app):
     app.model = importer.importPly("cube.ply")
+    app.cam = Vector3D(0, 0, 0)
     targetFps = 144
     app.timerDelay = 1000//targetFps
     app.started = time.time()
@@ -27,40 +28,28 @@ def drawPolygon(app, canvas, polygon):
 def redrawAll(app, canvas):
     for poly in app.model.polys:
         projectedPoly = []
-        for i, vertex in enumerate(poly):
-            vector = Vector3D.fromArray(vertex)
+        for i, vec in enumerate(poly):
+            vector = copy.deepcopy(vec)
+
+            # Rotation
             theta = 8.0 * (time.time()-app.started)
             theta2 = theta/2
-            
-            print(theta)
             vector.rotX(theta)
             vector.rotZ(theta2)
 
+            # Translation
             vector.z += 4
-            vector.x += 0
-            vector.y += 0
 
-
-
+            # Projection
             fov = 90
-
             vector.project(app.height, app.width, fov)
 
-            vector.x += 1
-            vector.x *= 0.5
-            vector.x *= app.width
-
-            vector.y += 1
-            vector.y *= 0.5
-            vector.y *= app.height
-
+            # Normalization
+            vector.normalizeToTkinter(app.height, app.width)
 
             projectedPoly.append(vector)
-        
-        if not projectedPoly:
-            return
 
-
+        # if len(projectedPoly) == 3:
         drawPolygon(app, canvas, projectedPoly)
 
 # main
