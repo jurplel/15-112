@@ -10,8 +10,8 @@ def readFile(path):
         return f.read()
 
 
-# Imports basic Stanford format PLY 3d model files
-# Export from Blender in ASCII mode with everything unchecked
+# Imports PLY 3d model files
+# Export from Blender in ASCII mode with everything but normals unchecked
 # http://learnwebgl.brown37.net/modelers/ply_data_format.html
 
 @dataclass
