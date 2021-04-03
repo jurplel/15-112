@@ -29,9 +29,9 @@ def readHeader(fileAsString):
     headerInfo = HeaderInfo()
     for i, line in enumerate(fileAsString.splitlines()):
         if line.startswith("element vertex"):
-            headerInfo.vertexCount = int(line.split(" ")[-1])
+            headerInfo.vertexCount = int(line.split()[-1])
         elif line.startswith("element face"):
-            headerInfo.faceCount = int(line.split(" ")[-1])
+            headerInfo.faceCount = int(line.split()[-1])
         elif line.startswith("property float n"):
             headerInfo.hasNormals = True
         elif line == "end_header":
@@ -51,7 +51,7 @@ def readBody(headerInfo, fileAsString):
     isNormal = False
     for lineNum in range(contentStart, facesStart):
         line = lines[lineNum]
-        floats = [ float(word) for word in line.split(" ")]
+        floats = [ float(word) for word in line.split()]
 
         vertices = np.array(floats[0:3])
         vector = None
@@ -74,7 +74,7 @@ def readBody(headerInfo, fileAsString):
 
     for lineNum in range(facesStart, len(lines)):
         line = lines[lineNum]
-        ints = [ int(word) for word in line.split(" ")]
+        ints = [ int(word) for word in line.split()]
         if ints[0] != 3:
             raise Exception("Face in file has more than 3 vertices!")
 

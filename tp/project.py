@@ -20,7 +20,7 @@ def rgbToHex(r, g, b):
 
 
 def appStarted(app):
-    app.model = ply_importer.importPly("cone.ply")
+    app.model = ply_importer.importPly("cube.ply")
     app.cam = Vector3D(0, 0, 0)
     app.light = Vector3D(0, 0, -1)
 
