@@ -21,7 +21,7 @@ def rgbToHex(r, g, b):
 
 def appStarted(app):
     updateProjection(app.height, app.width)
-    app.model = ply_importer.importPly("cube.ply")
+    app.model = ply_importer.importPly("diamonti.ply")
     app.cam = np.array([0, 0, 0])
     app.light = np.array([0, 0, -1])
 
@@ -48,11 +48,9 @@ def redrawAll(app, canvas):
     startTime = time.time()
 
     mesh = app.model
-
+    newPolys = copy.deepcopy(mesh.polys)
     readyPolys = []
-    for poly, norms in mesh.polys:
-        poly = copy.deepcopy(poly)
-        norms = copy.deepcopy(norms)
+    for poly, norms in newPolys:
         # Rotation
         theta = 20.0 * (time.time()-app.started)
         theta2 = theta
@@ -93,8 +91,7 @@ def redrawAll(app, canvas):
     # Draw in order with painter's algorithm
     readyPolys.sort(key=paintersAlgorithm)
 
-    for poly, color in readyPolys:
-        drawPolygon(app, canvas, poly, color)
+    [drawPolygon(app, canvas, x[0], x[1]) for x in readyPolys]
 
     # fps counter
     canvas.create_text(10, 10, text=int(1/(time.time()-startTime)), anchor="nw")
