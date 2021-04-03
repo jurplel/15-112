@@ -54,8 +54,7 @@ def redrawAll(app, canvas):
         # Rotation
         theta = 20.0 * (time.time()-app.started)
         theta2 = theta
-        rotatePoly(poly, theta, theta2, 0)
-        rotatePoly(norms, theta, theta2, 0)
+        rotatePoly(poly, norms, mesh.hasNormals, theta, theta2, 0)
         # Translation
         translatePoly(poly, 0, 0, 4)
 
@@ -89,7 +88,7 @@ def redrawAll(app, canvas):
         readyPolys.append((poly, rgbToHex(r, g, b)))
     
     # Draw in order with painter's algorithm
-    readyPolys.sort(key=paintersAlgorithm)
+    readyPolys.sort(key=paintersAlgorithm) # This might not even be necessary?
 
     [drawPolygon(app, canvas, x[0], x[1]) for x in readyPolys]
 

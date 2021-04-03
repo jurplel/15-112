@@ -8,7 +8,7 @@ def translatePoly(poly: np.array, x, y, z):
     translationMatrix = [x, y, z]
     poly += translationMatrix
 
-def rotatePoly(poly: np.array, degX, degY, degZ):
+def rotatePoly(poly: np.array, norms: np.array, hasNorms, degX, degY, degZ):
     alpha = math.radians(degX)
     beta = math.radians(degY)
     gamma = math.radians(degZ)
@@ -31,6 +31,8 @@ def rotatePoly(poly: np.array, degX, degY, degZ):
     rotationMatrix = rotXMatrix @ rotYMatrix @ rotZMatrix
 
     np.matmul(poly, rotationMatrix, poly)
+    if hasNorms:
+        np.matmul(norms, rotationMatrix, norms)
 
 # Ahh, nasty! Fix this!
 zFar = 100
