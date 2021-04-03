@@ -1,143 +1,82 @@
 from dataclasses import dataclass
 
 import numpy as np
-import math
+import math, copy
 
-class Vector3D:
-    def __init__(self, array, normArray = [None]):
-        if len(array) == 3:
-            array = np.append(array, 1)
+# poly is a np.array of vectors (also np.arrays)
+def translatePoly(poly: np.array, x, y, z):
+    translationMatrix = [x, y, z]
+    poly += translationMatrix
+    
+def rotatePoly(poly: np.array, degX, degY, degZ):
+    alpha = math.radians(degX)
+    beta = math.radians(degY)
+    gamma = math.radians(degZ)
+    
+    rotXMatrix = np.array([
+        [1, 0, 0],
+        [0, math.cos(alpha), -math.sin(alpha)],
+        [0, math.sin(alpha), math.cos(alpha)]
+    ])
+    rotYMatrix = np.array([
+        [math.cos(beta), 0, math.sin(beta)],
+        [0, 1, 0],
+        [-math.sin(beta), 0, math.cos(beta)]
+    ])
+    rotZMatrix = np.array([
+        [math.cos(gamma), -math.sin(gamma), 0],
+        [math.sin(gamma), math.cos(gamma), 0],
+        [0, 0, 1]
+    ])
+    rotationMatrix = rotXMatrix @ rotYMatrix @ rotZMatrix
 
-        self.hasNormals = normArray[0] != None
-        if self.hasNormals:
-            if len(normArray) == 3:
-                normArray = np.append(normArray, 1)
+    np.matmul(poly, rotationMatrix, poly)
 
-        self.vector = array
-        self.normVector = normArray
+# Ahh, nasty! Fix this!
+zFar = 100
+zNear = 0.1
+zDiff = zFar-zNear
+fov = math.radians(90.0)
+fovCalculation = 1/math.tan(fov/2)
 
-    @classmethod
-    def fromCoords(cls, x, y, z, nx = None, ny = None, nz = None):
-        return cls(np.array([x, y, z, 1]), np.array([nx, ny, nz, 1]))
+PROJECTION_MATRIX = np.array([
+    [fovCalculation, 0, 0, 0],
+    [0, fovCalculation, 0, 0],
+    [0, 0, zFar/zDiff, 1],
+    [0, 0, -(zFar*zNear)/zDiff, 0]
+])
 
-    def x(self):
-        return self.vector[0]
+def updateProjection(height, width):
+    aRatio = height/width
+    PROJECTION_MATRIX[0][0] = PROJECTION_MATRIX[1][1]*aRatio
 
-    def y(self):
-        return self.vector[1]
+def projectPoly(poly: np.array, height, width):
+    a = np.ones((3,1))
+    homoPoly = np.append(poly, a, axis=1)
 
-    def z(self):
-        return self.vector[2]
+    np.matmul(homoPoly, PROJECTION_MATRIX, homoPoly)
 
-    def nx(self):
-        if self.normVector:
-            return self.normVector[0]
+    for i, vector in enumerate(homoPoly):        
+        w = vector[3]
+        if w != 0:
+            vector /= w
 
-    def ny(self):
-        if self.normVector:
-            return self.normVector[1]
+        poly[i][0] = vector[0]
+        poly[i][1] = vector[1]
+        poly[i][2] = vector[2]
 
-    def nz(self):
-        if self.normVector:
-            return self.normVector[2]
+def makePolyDrawable(poly: np.array, height, width):
+    # Tkinter y coordinates are upside-down
+    invertYMatrix = [1, -1, 1]
+    poly *= invertYMatrix
 
-    def project(self, height, width, fov):
-        zFar = 100
-        zNear = 0.1
-        zDiff = zFar-zNear
-        fov = math.radians(90.0)
-        aRatio = height/width
-        fovCalculation = 1/math.tan(fov/2)
+    addOneMatrix = [1, 1, 0]
+    poly += addOneMatrix
 
-        projectionMatrix = np.array([
-            [aRatio*fovCalculation, 0, 0, 0],
-            [0, fovCalculation, 0, 0],
-            [0, 0, zFar/zDiff, 1],
-            [0, 0, -(zFar*zNear)/zDiff, 0]
-        ])
-
-        self.vector = self.vector @ projectionMatrix
-        w = self.vector[3]
-        self.vector[0] = self.vector[0] / w
-        self.vector[1] = self.vector[1] / w
-        self.vector[2] = self.vector[2] / w
-
-    def translate(self, x, y, z):
-        translationMatrix = [x, y, z, 0]
-        self.vector = self.vector + translationMatrix
-        # if self.hasNormals:
-            # self.normVector = self.normVector + translationMatrix
-
-    def rotate(self, degX, degY, degZ):
-        alpha = math.radians(degX)
-        beta = math.radians(degY)
-        gamma = math.radians(degZ)
-
-        rotXMatrix = np.array([
-            [1, 0, 0, 0],
-            [0, math.cos(alpha), -math.sin(alpha), 0],
-            [0, math.sin(alpha), math.cos(alpha), 0],
-            [0, 0, 0, 1]
-        ])
-        rotYMatrix = np.array([
-            [math.cos(beta), 0, math.sin(beta), 0],
-            [0, 1, 0, 0],
-            [-math.sin(beta), 0, math.cos(beta), 0],
-            [0, 0, 0, 1]
-        ])
-        rotZMatrix = np.array([
-            [math.cos(gamma), -math.sin(gamma), 0, 0],
-            [math.sin(gamma), math.cos(gamma), 0, 0],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]
-        ])
-        rotationMatrix = rotXMatrix @ rotYMatrix @ rotZMatrix
-        
-        self.vector = self.vector @ rotationMatrix
-
-        if self.hasNormals:
-            self.normVector = self.normVector @ rotationMatrix
-
-    def normalizeToTkinter(self, height, width):
-        # Tkinter y coordinates are upside-down
-        invertYMatrix = [1, -1, 1, 1]
-        self.vector = self.vector * invertYMatrix
-        
-        addOneMatrix = [1, 1, 0, 0]
-        self.vector = self.vector + addOneMatrix
-
-        normalizeMatrix = [width/2, height/2, 1, 1]
-        self.vector = self.vector * normalizeMatrix
-
-    def __str__(self):
-        return f"Vector3D({self.x()}, {self.y()}, {self.z()})"
-
-    def __add__(self, other):
-        vec = self.vector + other.vector
-        if self.hasNormals and other.hasNormals:
-            normVec = self.normVector + other.normVector
-        else:
-            normVec == None
-        return Vector3D(vec, normVec)
-
-    def __sub__(self, other):
-        vec = self.vector - other.vector
-        if self.hasNormals and other.hasNormals:
-            normVec = self.normVector - other.normVector
-        else:
-            normVec = [None]
-
-        return Vector3D(vec, normVec)
-
-
-
-        
-        
-# def vectorDotProduct(v0: Vector3D, v1: Vector3D):
-
-#     return np.dot(v0.toArray(), v1.toArray())
-
+    normalizeMatrix = [width/2, height/2, 1]
+    poly *= normalizeMatrix
 
 @dataclass
 class Mesh:
-    polys: list
+    polys: np.array
+    hasNormals: bool

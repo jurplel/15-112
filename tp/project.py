@@ -20,9 +20,10 @@ def rgbToHex(r, g, b):
 
 
 def appStarted(app):
+    updateProjection(app.height, app.width)
     app.model = ply_importer.importPly("diamonti.ply")
-    app.cam = Vector3D.fromCoords(0, 0, 0)
-    app.light = Vector3D.fromCoords(0, 0, -1)
+    app.cam = np.array([0, 0, 0])
+    app.light = np.array([0, 0, -1])
 
     targetFps = 144
     app.timerDelay = 1000//targetFps
@@ -33,73 +34,70 @@ def drawPolygon(app, canvas, polygon, color):
     v1 = polygon[1]
     v2 = polygon[2]
 
-    canvas.create_polygon(v0.x(), v0.y(), v1.x(), v1.y(), v2.x(), v2.y(), 
+    canvas.create_polygon(v0[0], v0[1], v1[0], v1[1], v2[0], v2[1], 
                         outline=color, fill=color)
 
 def paintersAlgorithm(polyAndColor):
     poly = polyAndColor[0]
-    return sum(vector.z() for vector in poly)/3
+    return sum(vector[2] for vector in poly)/3
 
 def redrawAll(app, canvas):
     startTime = time.time()
 
+    mesh = app.model
+
     readyPolys = []
-    for poly in app.model.polys:
-        projectedPoly = []
+    for poly, norms in mesh.polys:
+        poly = copy.deepcopy(poly)
+        norms = copy.deepcopy(norms)
+        # Rotation
+        theta = 20.0 * (time.time()-app.started)
+        theta2 = theta
+        rotatePoly(poly, theta, theta2, 0)
+        rotatePoly(norms, theta, theta2, 0)
+        # Translation
+        translatePoly(poly, 0, 0, 4)
 
-        pr, pg, pb = 0, 0, 0
-
-        for i, vec in enumerate(poly):
-            vector = copy.deepcopy(vec)
-
-            # Rotation
-            theta = 20.0 * (time.time()-app.started)
-            theta2 = theta
-            vector.rotate(theta, theta2, 0)
-
-            # Translation
-            vector.translate(0, 0, 4)
-
-            if vector.hasNormals:
+        cull = False
+        r, g, b = 0, 162, 255
+        if mesh.hasNormals:
+            for i in range(len(poly)):
                 # Culling
-                camDiff = vector-app.cam
-                camdp = np.dot(vector.normVector[0:3], camDiff.vector[0:3])
+                vec, norm = poly[i], norms[i]
+                camDiff = vec-app.cam
+                camdp = np.dot(norm, camDiff)
                 if camdp > 0:
+                    cull = True
                     break
-                
                 # Flat lighting
                 r, g, b = 0, 162, 255
-                lightdp = np.dot(vector.normVector[0:3], app.light.vector[0:3])
+                lightdp = np.dot(norm, app.light)
                 r *= lightdp
                 g *= lightdp
                 b *= lightdp
-                # I straight up have no idea what I did with this color code
-                # It only works this way and im scared to change it now
-                pr = r
-                pg = g
-                pb = b
 
-            # Projection
-            fov = 90
-            vector.project(app.height, app.width, fov)
+        if cull:
+            continue
 
-            # Normalization
-            vector.normalizeToTkinter(app.height, app.width)
+        # Projection
+        projectPoly(poly, app.height, app.width)
 
-            projectedPoly.append(vector)
+        # Convert to tkinter coords
+        makePolyDrawable(poly, app.height, app.width)
 
-        if len(projectedPoly) == 3:
-            readyPolys.append((projectedPoly, rgbToHex(pr, pg, pb)))
+        readyPolys.append((poly, rgbToHex(r, g, b)))
     
     # Draw in order with painter's algorithm
     readyPolys.sort(key=paintersAlgorithm)
 
-    # print([x[0][0].z for x in readyPolys])
-
     for poly, color in readyPolys:
         drawPolygon(app, canvas, poly, color)
 
+    # fps counter
     canvas.create_text(10, 10, text=int(1/(time.time()-startTime)), anchor="nw")
+
+def sizeChanged(app):
+    updateProjection(app.height, app.width)
 
 # main
 def main():
