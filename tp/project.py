@@ -44,6 +44,10 @@ def paintersAlgorithm(polyAndColor):
     poly = polyAndColor[0]
     return sum(vector[2] for vector in poly)/3
 
+
+# FURTHER OPTIMIZATION: Allocate one rotation and transform vector for the whole function
+# This can be extended to other ones like maybe makepolydrawable?
+# Serious excessive allocations right now
 def redrawAll(app, canvas):
     startTime = time.time()
 
