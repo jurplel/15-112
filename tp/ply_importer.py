@@ -87,6 +87,7 @@ def importPly(path):
 
     mesh = readBody(headerInfo, fileAsString)
 
+    print(f"Loaded {path} with {len(mesh.polys)} polygons")
     return mesh
 
 

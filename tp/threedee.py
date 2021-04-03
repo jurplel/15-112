@@ -7,7 +7,7 @@ import math, copy
 def translatePoly(poly: np.array, x, y, z):
     translationMatrix = [x, y, z]
     poly += translationMatrix
-    
+
 def rotatePoly(poly: np.array, degX, degY, degZ):
     alpha = math.radians(degX)
     beta = math.radians(degY)

@@ -21,13 +21,16 @@ def rgbToHex(r, g, b):
 
 def appStarted(app):
     updateProjection(app.height, app.width)
-    app.model = ply_importer.importPly("diamonti.ply")
+    app.model = ply_importer.importPly("cube.ply")
     app.cam = np.array([0, 0, 0])
     app.light = np.array([0, 0, -1])
 
     targetFps = 144
     app.timerDelay = 1000//targetFps
     app.started = time.time()
+
+def sizeChanged(app):
+    updateProjection(app.height, app.width)
 
 def drawPolygon(app, canvas, polygon, color):
     v0 = polygon[0]
@@ -96,10 +99,6 @@ def redrawAll(app, canvas):
     # fps counter
     canvas.create_text(10, 10, text=int(1/(time.time()-startTime)), anchor="nw")
 
-def sizeChanged(app):
-    updateProjection(app.height, app.width)
-
-# main
 def main():
     width = 1280
     height = 720
