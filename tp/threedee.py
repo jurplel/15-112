@@ -5,7 +5,7 @@ import math, copy
 
 # poly is a np.array of vectors (also np.arrays)
 def translatePoly(poly: np.array, x, y, z):
-    translationMatrix = [x, y, z]
+    translationMatrix = [x, y, z, 0]
     poly += translationMatrix
 
 def rotatePoly(poly: np.array, norms: np.array, hasNorms, degX, degY, degZ):
@@ -14,19 +14,22 @@ def rotatePoly(poly: np.array, norms: np.array, hasNorms, degX, degY, degZ):
     gamma = math.radians(degZ)
     
     rotXMatrix = np.array([
-        [1, 0, 0],
-        [0, math.cos(alpha), -math.sin(alpha)],
-        [0, math.sin(alpha), math.cos(alpha)]
+        [1, 0, 0, 0],
+        [0, math.cos(alpha), -math.sin(alpha), 0],
+        [0, math.sin(alpha), math.cos(alpha), 0],
+        [0, 0, 0, 1]
     ])
     rotYMatrix = np.array([
-        [math.cos(beta), 0, math.sin(beta)],
-        [0, 1, 0],
-        [-math.sin(beta), 0, math.cos(beta)]
+        [math.cos(beta), 0, math.sin(beta), 0],
+        [0, 1, 0, 0],
+        [-math.sin(beta), 0, math.cos(beta), 0],
+        [0, 0, 0, 1]
     ])
     rotZMatrix = np.array([
-        [math.cos(gamma), -math.sin(gamma), 0],
-        [math.sin(gamma), math.cos(gamma), 0],
-        [0, 0, 1]
+        [math.cos(gamma), -math.sin(gamma), 0, 0],
+        [math.sin(gamma), math.cos(gamma), 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
     ])
     rotationMatrix = rotXMatrix @ rotYMatrix @ rotZMatrix
 
@@ -53,29 +56,23 @@ def updateProjection(height, width):
     PROJECTION_MATRIX[0][0] = PROJECTION_MATRIX[1][1]*aRatio
 
 def projectPoly(poly: np.array, height, width):
-    a = np.ones((3,1))
-    homoPoly = np.append(poly, a, axis=1)
+    np.matmul(poly, PROJECTION_MATRIX, poly)
 
-    np.matmul(homoPoly, PROJECTION_MATRIX, homoPoly)
-
-    for i, vector in enumerate(homoPoly):        
+    for i, vector in enumerate(poly):        
         w = vector[3]
-        if w != 0:
-            vector /= w
-
-        poly[i][0] = vector[0]
-        poly[i][1] = vector[1]
-        poly[i][2] = vector[2]
+        if w == 0:
+            break
+        poly[i] /= w
 
 def makePolyDrawable(poly: np.array, height, width):
     # Tkinter y coordinates are upside-down
-    invertYMatrix = [1, -1, 1]
+    invertYMatrix = [1, -1, 1, 1]
     poly *= invertYMatrix
 
-    addOneMatrix = [1, 1, 0]
+    addOneMatrix = [1, 1, 0, 0]
     poly += addOneMatrix
 
-    normalizeMatrix = [width/2, height/2, 1]
+    normalizeMatrix = [width/2, height/2, 1, 1]
     poly *= normalizeMatrix
 
 @dataclass

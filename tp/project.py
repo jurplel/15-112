@@ -21,9 +21,9 @@ def rgbToHex(r, g, b):
 
 def appStarted(app):
     updateProjection(app.height, app.width)
-    app.model = ply_importer.importPly("diamonti.ply")
-    app.cam = np.array([0, 0, 0])
-    app.light = np.array([0, 0, -1])
+    app.model = ply_importer.importPly("cube.ply")
+    app.cam = np.array([0, 0, 0, 1])
+    app.light = np.array([0, 0, -1, 1])
 
     targetFps = 144
     app.timerDelay = 1000//targetFps
@@ -59,7 +59,7 @@ def redrawAll(app, canvas):
         translatePoly(poly, 0, 0, 4)
 
         cull = False
-        r, g, b = 0, 162, 255
+        pr, pg, pb = 0, 0, 0
         if mesh.hasNormals:
             for i in range(len(poly)):
                 # Culling
@@ -71,10 +71,13 @@ def redrawAll(app, canvas):
                     break
                 # Flat lighting
                 r, g, b = 0, 162, 255
-                lightdp = np.dot(norm, app.light)
+                lightdp = np.dot(norm, app.light)-1 # -1 because the 4th parameter makes things weird
                 r *= lightdp
                 g *= lightdp
                 b *= lightdp
+                pr += r
+                pg += g
+                pb += b
 
         if cull:
             continue
@@ -85,7 +88,11 @@ def redrawAll(app, canvas):
         # Convert to tkinter coords
         makePolyDrawable(poly, app.height, app.width)
 
-        readyPolys.append((poly, rgbToHex(r, g, b)))
+        # Avg color
+        pr /= 3
+        pg /= 3
+        pb /= 3
+        readyPolys.append((poly, rgbToHex(pr, pg, pb)))
     
     # Draw in order with painter's algorithm
     readyPolys.sort(key=paintersAlgorithm) # This might not even be necessary?

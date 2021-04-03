@@ -53,10 +53,12 @@ def readBody(headerInfo, fileAsString):
     for lineNum in range(contentStart, facesStart):
         line = lines[lineNum]
         points = np.array([ float(word) for word in line.split()])
+        points = np.insert(points, 3, 1)
+        points = np.append(points, 1)
 
-        vertices.append(points[0:3])
+        vertices.append(points[0:4])
         if headerInfo.hasNormals:
-            normals.append(points[3:6])
+            normals.append(points[4:8])
 
     for lineNum in range(facesStart, len(lines)):
         line = lines[lineNum]
