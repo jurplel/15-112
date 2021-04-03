@@ -20,9 +20,9 @@ def rgbToHex(r, g, b):
 
 
 def appStarted(app):
-    app.model = ply_importer.importPly("cube.ply")
-    app.cam = Vector3D(0, 0, 0)
-    app.light = Vector3D(0, 0, -1)
+    app.model = ply_importer.importPly("diamonti.ply")
+    app.cam = Vector3D.fromCoords(0, 0, 0)
+    app.light = Vector3D.fromCoords(0, 0, -1)
 
     targetFps = 144
     app.timerDelay = 1000//targetFps
@@ -33,14 +33,16 @@ def drawPolygon(app, canvas, polygon, color):
     v1 = polygon[1]
     v2 = polygon[2]
 
-    canvas.create_polygon(v0.x, v0.y, v1.x, v1.y, v2.x, v2.y, 
+    canvas.create_polygon(v0.x(), v0.y(), v1.x(), v1.y(), v2.x(), v2.y(), 
                         outline=color, fill=color)
 
 def paintersAlgorithm(polyAndColor):
     poly = polyAndColor[0]
-    return sum(vector.z for vector in poly)/3
+    return sum(vector.z() for vector in poly)/3
 
 def redrawAll(app, canvas):
+    startTime = time.time()
+
     readyPolys = []
     for poly in app.model.polys:
         projectedPoly = []
@@ -53,30 +55,29 @@ def redrawAll(app, canvas):
             # Rotation
             theta = 20.0 * (time.time()-app.started)
             theta2 = theta
-            vector.rotX(theta)
-            vector.rotZ(theta2)
+            vector.rotate(theta, theta2, 0)
 
             # Translation
-            vector.z += 4
+            vector.translate(0, 0, 4)
 
             if vector.hasNormals:
                 # Culling
-                normals = vector.normalsAsVec()
                 camDiff = vector-app.cam
-                camdp = vectorDotProduct(normals, camDiff)
+                camdp = np.dot(vector.normVector[0:3], camDiff.vector[0:3])
                 if camdp > 0:
                     break
                 
                 # Flat lighting
                 r, g, b = 0, 162, 255
-                lightdp = vectorDotProduct(normals, app.light)
+                lightdp = np.dot(vector.normVector[0:3], app.light.vector[0:3])
                 r *= lightdp
                 g *= lightdp
                 b *= lightdp
-                # Add to total r, g, b
-                pr += r
-                pg += g
-                pb += b
+                # I straight up have no idea what I did with this color code
+                # It only works this way and im scared to change it now
+                pr = r
+                pg = g
+                pb = b
 
             # Projection
             fov = 90
@@ -87,12 +88,8 @@ def redrawAll(app, canvas):
 
             projectedPoly.append(vector)
 
-        # Get average rgb for vertices
-        pr /= 3
-        pg /= 3
-        pb /= 3
         if len(projectedPoly) == 3:
-            readyPolys.append((projectedPoly, rgbToHex(r, g, b)))
+            readyPolys.append((projectedPoly, rgbToHex(pr, pg, pb)))
     
     # Draw in order with painter's algorithm
     readyPolys.sort(key=paintersAlgorithm)
@@ -101,6 +98,8 @@ def redrawAll(app, canvas):
 
     for poly, color in readyPolys:
         drawPolygon(app, canvas, poly, color)
+
+    canvas.create_text(10, 10, text=int(1/(time.time()-startTime)), anchor="nw")
 
 # main
 def main():

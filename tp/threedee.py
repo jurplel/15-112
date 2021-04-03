@@ -4,22 +4,44 @@ import numpy as np
 import math
 
 class Vector3D:
-    def __init__(self, x, y, z, nx = None, ny = None, nz = None):
-        self.x = x
-        self.y = y
-        self.z = z
-        self.nx = nx
-        self.ny = ny
-        self.nz = nz
-        self.hasNormals = nx != None
+    def __init__(self, array, normArray = [None]):
+        if len(array) == 3:
+            array = np.append(array, 1)
+
+        self.hasNormals = normArray[0] != None
+        if self.hasNormals:
+            if len(normArray) == 3:
+                normArray = np.append(normArray, 1)
+
+        self.vector = array
+        self.normVector = normArray
 
     @classmethod
-    def fromArray(cls, array):
-        return cls(array[0], array[1], array[2])
+    def fromCoords(cls, x, y, z, nx = None, ny = None, nz = None):
+        return cls(np.array([x, y, z, 1]), np.array([nx, ny, nz, 1]))
+
+    def x(self):
+        return self.vector[0]
+
+    def y(self):
+        return self.vector[1]
+
+    def z(self):
+        return self.vector[2]
+
+    def nx(self):
+        if self.normVector:
+            return self.normVector[0]
+
+    def ny(self):
+        if self.normVector:
+            return self.normVector[1]
+
+    def nz(self):
+        if self.normVector:
+            return self.normVector[2]
 
     def project(self, height, width, fov):
-        matrix = np.array([self.x, self.y, self.z, 1])
-
         zFar = 100
         zNear = 0.1
         zDiff = zFar-zNear
@@ -34,127 +56,86 @@ class Vector3D:
             [0, 0, -(zFar*zNear)/zDiff, 0]
         ])
 
-        matrix = matrix @ projectionMatrix
-        w = matrix[3]
-        self.x = matrix[0] / w
-        self.y = matrix[1] / w
-        self.z = matrix[2] / w
+        self.vector = self.vector @ projectionMatrix
+        w = self.vector[3]
+        self.vector[0] = self.vector[0] / w
+        self.vector[1] = self.vector[1] / w
+        self.vector[2] = self.vector[2] / w
 
-    def rotX(self, deg):
-        matrix = self.toArray()
-        if self.hasNormals:
-            normalMatrix = self.normalsAsVec().toArray()
+    def translate(self, x, y, z):
+        translationMatrix = [x, y, z, 0]
+        self.vector = self.vector + translationMatrix
+        # if self.hasNormals:
+            # self.normVector = self.normVector + translationMatrix
 
-        theta = math.radians(deg)
+    def rotate(self, degX, degY, degZ):
+        alpha = math.radians(degX)
+        beta = math.radians(degY)
+        gamma = math.radians(degZ)
 
-        rotationMatrix = np.array([
-            [1, 0, 0],
-            [0, math.cos(theta), -math.sin(theta)],
-            [0, math.sin(theta), math.cos(theta)]
+        rotXMatrix = np.array([
+            [1, 0, 0, 0],
+            [0, math.cos(alpha), -math.sin(alpha), 0],
+            [0, math.sin(alpha), math.cos(alpha), 0],
+            [0, 0, 0, 1]
         ])
-
-        matrix = matrix @ rotationMatrix
-        self.x = matrix[0]
-        self.y = matrix[1]
-        self.z = matrix[2]
-
-        if self.hasNormals:
-            normalMatrix = normalMatrix @ rotationMatrix
-            self.nx = normalMatrix[0]
-            self.ny = normalMatrix[1]
-            self.nz = normalMatrix[2]
-
-    def rotY(self, deg):
-        matrix = self.toArray()
-        if self.hasNormals:
-            normalMatrix = self.normalsAsVec().toArray()
-
-        theta = math.radians(deg)
-
-        rotationMatrix = np.array([
-            [math.cos(theta), 0, math.sin(theta)],
-            [0, 1, 0],
-            [-math.sin(theta), 0, math.cos(theta)]
+        rotYMatrix = np.array([
+            [math.cos(beta), 0, math.sin(beta), 0],
+            [0, 1, 0, 0],
+            [-math.sin(beta), 0, math.cos(beta), 0],
+            [0, 0, 0, 1]
         ])
-
-        matrix = matrix @ rotationMatrix
-        self.x = matrix[0]
-        self.y = matrix[1]
-        self.z = matrix[2]
-
-        if self.hasNormals:
-            normalMatrix = normalMatrix @ rotationMatrix
-            self.nx = normalMatrix[0]
-            self.ny = normalMatrix[1]
-            self.nz = normalMatrix[2]
-
-    def rotZ(self, deg):
-        matrix = self.toArray()
-        if self.hasNormals:
-            normalMatrix = self.normalsAsVec().toArray()
-
-        theta = math.radians(deg)
-
-        rotationMatrix = np.array([
-            [math.cos(theta), -math.sin(theta), 0],
-            [math.sin(theta), math.cos(theta), 0],
-            [0, 0, 1]
+        rotZMatrix = np.array([
+            [math.cos(gamma), -math.sin(gamma), 0, 0],
+            [math.sin(gamma), math.cos(gamma), 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
         ])
-
-        matrix = matrix @ rotationMatrix
-        self.x = matrix[0]
-        self.y = matrix[1]
-        self.z = matrix[2]
+        rotationMatrix = rotXMatrix @ rotYMatrix @ rotZMatrix
+        
+        self.vector = self.vector @ rotationMatrix
 
         if self.hasNormals:
-            normalMatrix = normalMatrix @ rotationMatrix
-            self.nx = normalMatrix[0]
-            self.ny = normalMatrix[1]
-            self.nz = normalMatrix[2]
+            self.normVector = self.normVector @ rotationMatrix
 
     def normalizeToTkinter(self, height, width):
         # Tkinter y coordinates are upside-down
-        self.y = -self.y
-        self.y += 1
-        self.y *= 0.5
-        self.y *= height
+        invertYMatrix = [1, -1, 1, 1]
+        self.vector = self.vector * invertYMatrix
+        
+        addOneMatrix = [1, 1, 0, 0]
+        self.vector = self.vector + addOneMatrix
 
-        self.x += 1
-        self.x *= 0.5
-        self.x *= width
-
-    def normalsAsVec(self):
-        if self.hasNormals:
-            return Vector3D(self.nx, self.ny, self.nz)
-
-    def toList(self):
-        return [self.x, self.y, self.z]
-
-    def toArray(self):
-        return np.array([self.x, self.y, self.z])
+        normalizeMatrix = [width/2, height/2, 1, 1]
+        self.vector = self.vector * normalizeMatrix
 
     def __str__(self):
-        return f"Vector3D({self.x}, {self.y}, {self.z})"
+        return f"Vector3D({self.x()}, {self.y()}, {self.z()})"
 
     def __add__(self, other):
-        x = self.x + other.x
-        y = self.y + other.y
-        z = self.z + other.z
-        return Vector3D(x, y, z)
+        vec = self.vector + other.vector
+        if self.hasNormals and other.hasNormals:
+            normVec = self.normVector + other.normVector
+        else:
+            normVec == None
+        return Vector3D(vec, normVec)
 
     def __sub__(self, other):
-        x = self.x - other.x
-        y = self.y - other.y
-        z = self.z - other.z
-        return Vector3D(x, y, z)
+        vec = self.vector - other.vector
+        if self.hasNormals and other.hasNormals:
+            normVec = self.normVector - other.normVector
+        else:
+            normVec = [None]
+
+        return Vector3D(vec, normVec)
 
 
 
         
         
-def vectorDotProduct(v0: Vector3D, v1: Vector3D):
+# def vectorDotProduct(v0: Vector3D, v1: Vector3D):
 
-    return np.dot(v0.toArray(), v1.toArray())
+#     return np.dot(v0.toArray(), v1.toArray())
 
 
 @dataclass

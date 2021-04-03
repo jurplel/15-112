@@ -56,17 +56,10 @@ def readBody(headerInfo, fileAsString):
         vertices = np.array(floats[0:3])
         vector = None
         if headerInfo.hasNormals and isNormal:
-            normal = np.array(floats[3:6])
-            vector = Vector3D(vertices[0],
-                              vertices[1],
-                              vertices[2],
-                              normal[0],
-                              normal[1],
-                              normal[2])
+            normals = np.array(floats[3:6])
+            vector = Vector3D(vertices, normals)
         else:
-            vector = Vector3D(vertices[0],
-                    vertices[1],
-                    vertices[2])
+            vector = Vector3D(vertices)
 
         vectors.append(vector)
 
