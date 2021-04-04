@@ -54,7 +54,7 @@ def readBody(headerInfo, fileAsString):
         line = lines[lineNum]
         points = np.array([ float(word) for word in line.split()])
         points = np.insert(points, 3, 1)
-        points = np.append(points, 1)
+        points = np.append(points, 0) # 0 for normal's w
 
         vertices.append(points[0:4])
         if headerInfo.hasNormals:

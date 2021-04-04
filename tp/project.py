@@ -22,11 +22,11 @@ def rgbToHex(r, g, b):
 def appStarted(app):
     app.model = ply_importer.importPly("diamonti.ply")
     
-    app.cam = np.array([0.0, 0.0, 0.0, 1])
-    app.camDir = np.array([0.0, 0.0, 1.0, 1])
+    app.cam = np.array([0.0, 0.0, 0.0, 0])
+    app.camDir = np.array([0.0, 0.0, 1.0, 0])
     app.yaw = 0
 
-    app.light = np.array([0.0, 0.0, -1.0, 1])
+    app.light = np.array([0.0, 0.0, -1.0, 0])
 
     targetFps = 144
     app.timerDelay = 1500//targetFps
@@ -36,7 +36,6 @@ def appStarted(app):
 def keyPressed(app, event):
     key = event.key.lower()
 
-    print(app.cam, app.camDir)
     if key == "w":
         app.cam += app.camDir
     elif key == "s":
@@ -61,7 +60,7 @@ def keyPressed(app, event):
         [-math.sin(math.radians(app.yaw)), 0, math.cos(math.radians(app.yaw)), 0],
         [0, 0, 0, 1]
     ])
-    app.camDir = rotYMatrix @ np.array([0, 0, 1, 1])
+    app.camDir = rotYMatrix @ np.array([0, 0, 1, 0])
     
         
 def mouseMoved(app, event):
@@ -91,67 +90,56 @@ def redrawAll(app, canvas):
     startTime = time.time()
 
     # Get matrices once
-    projectionMatrix = getProjectionMatrix(app.height, app.width)
+    
     translationMatrix = getTranslationMatrix(0, 0, 4)
+
     theta = 20.0 * (time.time()-app.started)
     theta2 = theta
     rotationMatrix = getRotationMatrix(theta, theta2, 0)
+
     towards = app.cam + app.camDir
     lookAtMatrix = getLookAtMatrix(app.cam, towards)
+
+    transformMatrix = rotationMatrix @ translationMatrix
+
+    projectionMatrix = getProjectionMatrix(app.height, app.width)
 
     mesh = app.model
     newPolys = copy.deepcopy(mesh.polys)
     readyPolys = []
     for poly, norms in newPolys:
-        # Rotation
-        np.matmul(poly, rotationMatrix, poly)
+        np.matmul(poly, transformMatrix, poly)
+        np.matmul(norms, rotationMatrix, norms)
+
+        r, g, b = 0, 162, 255
         if mesh.hasNormals:
-            np.matmul(norms, rotationMatrix, norms)
-        # Translation
-        poly += translationMatrix
+            # Culling
+            avgNormal = np.add.reduce(norms) / len(norms)
+            camRay = poly[0] - app.cam
+            camDiff = np.dot(avgNormal, camRay)
+            if camDiff > 0:
+                continue
+            # Flat shading
+            lightDiff = max(0.25, np.dot(avgNormal, app.light))
+            r *= lightDiff
+            g *= lightDiff
+            b *= lightDiff
 
-        cullCount = 0
-        pr, pg, pb = 0, 0, 0
-        if mesh.hasNormals:
-            for i in range(len(poly)):
-                # Culling
-                vec, norm = poly[i], norms[i]
-                camDiff = vec-app.camDir
-                camdp = np.dot(norm, camDiff)
-                if camdp > 0:
-                    cullCount += 1
-                    break
-                # Flat lighting
-                r, g, b = 0, 162, 255
-                lightdp = np.dot(norm, app.light)-1 # -1 because the 4th parameter makes things weird
-                r *= lightdp
-                g *= lightdp
-                b *= lightdp
-                pr += r
-                pg += g
-                pb += b
-
-        if cullCount == 3:
-            continue
-
-        # Camera position
+        # Modify with camera position
         np.matmul(poly, lookAtMatrix, poly)
 
-        # Projection
+        # Perspective projection
         projectPoly(projectionMatrix, poly)
 
         # Convert to tkinter coords
         makePolyDrawable(poly, app.height, app.width)
 
-        # Avg color
-        pr /= 3
-        pg /= 3
-        pb /= 3
-        readyPolys.append((poly, rgbToHex(pr, pg, pb)))
+        readyPolys.append((poly, rgbToHex(r, g, b)))
     
     # Draw in order with painter's algorithm
-    readyPolys.sort(key=paintersAlgorithm) # This might not even be necessary?
+    readyPolys.sort(key=paintersAlgorithm) # This is a glitchy algorithm but its good enough
 
+    # List comprehensions are potentially faster than for loops
     [drawPolygon(app, canvas, x[0], x[1]) for x in readyPolys]
 
     # fps counter

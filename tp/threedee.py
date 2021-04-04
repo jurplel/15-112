@@ -5,8 +5,8 @@ import math, copy
 
 # poly is a np.array of vectors (also np.arrays)
 def getProjectionMatrix(height, width, fov = 90):
-    zFar = 10
-    zNear = 1
+    zFar = 100
+    zNear = 0.1
     zDiff = zFar-zNear
     fov = math.radians(90.0)
     fovCalculation = 1/math.tan(fov/2)
@@ -22,7 +22,12 @@ def getProjectionMatrix(height, width, fov = 90):
     return projectionMatrix
 
 def getTranslationMatrix(x, y, z):
-    return np.array([x, y, z, 0])
+    return np.array([
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [x, y, z, 1]
+    ])
 
 def getRotationMatrix(degX, degY, degZ):
     alpha = math.radians(degX)
@@ -51,20 +56,20 @@ def getRotationMatrix(degX, degY, degZ):
     rotationMatrix = rotXMatrix @ rotYMatrix @ rotZMatrix
     return rotationMatrix
 
-def getLookAtMatrix(pos, towards, upward = [0, 1, 0, 1]):
+def getLookAtMatrix(pos, towards, upward = np.array([0.0, 1.0, 0.0, 1.0])):
     forward = towards - pos
-    forward = forward / np.linalg.norm(forward)
-    upwardn = upward / np.linalg.norm(upward)
+    normVec(forward)
+    normVec(upward)
 
-    up = upwardn-(forward * np.dot(upwardn, forward))
-    upn = up / np.linalg.norm(up)
-    right = np.append(np.cross(upn[0:3], forward[0:3]), 1)
+    up = upward-(forward * np.dot(upward, forward))
+    normVec(up)
+    right = np.append(np.cross(up[0:3], forward[0:3]), 1)
 
     lookAtMatrix = np.array([
-        [right[0], upn[0], forward[0], 0],
-        [right[1], upn[1], forward[1], 0],
-        [right[2], upn[2], forward[2], 0],
-        [np.dot(right, -pos), np.dot(upn, -pos), np.dot(forward, -pos), 1]
+        [right[0], up[0], forward[0], 0],
+        [right[1], up[1], forward[1], 0],
+        [right[2], up[2], forward[2], 0],
+        [np.dot(right, -pos), np.dot(up, -pos), np.dot(forward, -pos), 1]
     ])
 
     return lookAtMatrix
@@ -93,6 +98,11 @@ def makePolyDrawable(poly: np.array, height, width):
 
     normalizeMatrix = [width/2, height/2, 1, 1]
     poly *= normalizeMatrix
+
+# Used instead of built in np.linalg.norm for performance reasons
+def normVec(vec: np.array):
+    magnitude = math.sqrt(vec[0]**2+vec[1]**2+vec[2]**2)
+    vec /= magnitude
 
 @dataclass
 class Mesh:
