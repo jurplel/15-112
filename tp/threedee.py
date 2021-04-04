@@ -4,11 +4,27 @@ import numpy as np
 import math, copy
 
 # poly is a np.array of vectors (also np.arrays)
-def translatePoly(poly: np.array, x, y, z):
-    translationMatrix = [x, y, z, 0]
-    poly += translationMatrix
+def getProjectionMatrix(height, width, fov = 90):
+    zFar = 10
+    zNear = 1
+    zDiff = zFar-zNear
+    fov = math.radians(90.0)
+    fovCalculation = 1/math.tan(fov/2)
+    aRatio = height/width
 
-def rotatePoly(poly: np.array, norms: np.array, hasNorms, degX, degY, degZ):
+    projectionMatrix = np.array([
+        [aRatio*fovCalculation, 0, 0, 0],
+        [0, fovCalculation, 0, 0],
+        [0, 0, zFar/zDiff, 1],
+        [0, 0, -(zFar*zNear)/zDiff, 0]
+    ])
+
+    return projectionMatrix
+
+def getTranslationMatrix(x, y, z):
+    return np.array([x, y, z, 0])
+
+def getRotationMatrix(degX, degY, degZ):
     alpha = math.radians(degX)
     beta = math.radians(degY)
     gamma = math.radians(degZ)
@@ -31,32 +47,35 @@ def rotatePoly(poly: np.array, norms: np.array, hasNorms, degX, degY, degZ):
         [0, 0, 1, 0],
         [0, 0, 0, 1]
     ])
-    rotationMatrix = rotXMatrix @ rotYMatrix @ rotZMatrix
 
+    rotationMatrix = rotXMatrix @ rotYMatrix @ rotZMatrix
+    return rotationMatrix
+
+def getLookAtMatrix(pos, towards, upward = [0, 1, 0, 1]):
+    forward = towards - pos
+    forward = forward / np.linalg.norm(forward)
+    upwardn = upward / np.linalg.norm(upward)
+
+    up = upwardn-(forward * np.dot(upwardn, forward))
+    upn = up / np.linalg.norm(up)
+    right = np.append(np.cross(upn[0:3], forward[0:3]), 1)
+
+    lookAtMatrix = np.array([
+        [right[0], upn[0], forward[0], 0],
+        [right[1], upn[1], forward[1], 0],
+        [right[2], upn[2], forward[2], 0],
+        [np.dot(right, -pos), np.dot(upn, -pos), np.dot(forward, -pos), 1]
+    ])
+
+    return lookAtMatrix
+
+def rotatePoly(rotationMatrix, poly: np.array, norms: np.array, hasNorms):
     np.matmul(poly, rotationMatrix, poly)
     if hasNorms:
         np.matmul(norms, rotationMatrix, norms)
 
-# Ahh, nasty! Fix this!
-zFar = 10
-zNear = 1
-zDiff = zFar-zNear
-fov = math.radians(90.0)
-fovCalculation = 1/math.tan(fov/2)
-
-PROJECTION_MATRIX = np.array([
-    [fovCalculation, 0, 0, 0],
-    [0, fovCalculation, 0, 0],
-    [0, 0, zFar/zDiff, 1],
-    [0, 0, -(zFar*zNear)/zDiff, 0]
-])
-
-def updateProjection(height, width):
-    aRatio = height/width
-    PROJECTION_MATRIX[0][0] = PROJECTION_MATRIX[1][1]*aRatio
-
-def projectPoly(poly: np.array, height, width):
-    np.matmul(poly, PROJECTION_MATRIX, poly)
+def projectPoly(projectionMatrix, poly: np.array):
+    np.matmul(poly, projectionMatrix, poly)
 
     for i, vector in enumerate(poly):        
         w = vector[3]
@@ -74,27 +93,6 @@ def makePolyDrawable(poly: np.array, height, width):
 
     normalizeMatrix = [width/2, height/2, 1, 1]
     poly *= normalizeMatrix
-
-def lookAt(poly: np.array, pos, towards, upward = [0, 1, 0, 1]):
-    forward = towards - pos
-    # forward = forward / np.linalg.norm(forward)
-    # upwardn = upward / np.linalg.norm(upward)
-
-    up = upward-(forward * np.dot(upward, forward))
-    upn = up / np.linalg.norm(up)
-    right = np.append(np.cross(upn[0:3], forward[0:3]), 1)
-
-
-    lookAtMatrix = [
-        [right[0], upn[0], forward[0], 0],
-        [right[1], upn[1], forward[1], 0],
-        [right[2], upn[2], forward[2], 0],
-        [np.dot(right, -pos), np.dot(upn, -pos), np.dot(forward, -pos), 1]
-    ]
-
-
-    np.matmul(poly, lookAtMatrix, poly)
-
 
 @dataclass
 class Mesh:

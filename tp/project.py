@@ -20,8 +20,7 @@ def rgbToHex(r, g, b):
 
 
 def appStarted(app):
-    updateProjection(app.height, app.width)
-    app.model = ply_importer.importPly("cone.ply")
+    app.model = ply_importer.importPly("diamonti.ply")
     
     app.cam = np.array([0.0, 0.0, 0.0, 1])
     app.camDir = np.array([0.0, 0.0, 1.0, 1])
@@ -33,9 +32,6 @@ def appStarted(app):
     app.timerDelay = 1500//targetFps
     app.started = time.time()
     app.lastMousePos = None
-
-def sizeChanged(app):
-    updateProjection(app.height, app.width)
 
 def keyPressed(app, event):
     key = event.key.lower()
@@ -91,23 +87,28 @@ def paintersAlgorithm(polyAndColor):
     return -sum(vector[2] for vector in poly)/3
 
 
-# FURTHER OPTIMIZATION: Allocate one rotation and transform vector for the whole function
-# This can be extended to other ones like maybe makepolydrawable?
-# Serious excessive allocations right now
-# Should probably be put in a drawMesh function with that functionality^
 def redrawAll(app, canvas):
     startTime = time.time()
+
+    # Get matrices once
+    projectionMatrix = getProjectionMatrix(app.height, app.width)
+    translationMatrix = getTranslationMatrix(0, 0, 4)
+    theta = 20.0 * (time.time()-app.started)
+    theta2 = theta
+    rotationMatrix = getRotationMatrix(theta, theta2, 0)
+    towards = app.cam + app.camDir
+    lookAtMatrix = getLookAtMatrix(app.cam, towards)
 
     mesh = app.model
     newPolys = copy.deepcopy(mesh.polys)
     readyPolys = []
     for poly, norms in newPolys:
         # Rotation
-        theta = 20.0 * (time.time()-app.started)
-        theta2 = theta
-        rotatePoly(poly, norms, mesh.hasNormals, theta, theta2, 0)
+        np.matmul(poly, rotationMatrix, poly)
+        if mesh.hasNormals:
+            np.matmul(norms, rotationMatrix, norms)
         # Translation
-        translatePoly(poly, 0, 0, 4)
+        poly += translationMatrix
 
         cullCount = 0
         pr, pg, pb = 0, 0, 0
@@ -133,11 +134,11 @@ def redrawAll(app, canvas):
         if cullCount == 3:
             continue
 
-        towards = app.cam + app.camDir
-        lookAt(poly, app.cam, towards)
+        # Camera position
+        np.matmul(poly, lookAtMatrix, poly)
 
         # Projection
-        projectPoly(poly, app.height, app.width)
+        projectPoly(projectionMatrix, poly)
 
         # Convert to tkinter coords
         makePolyDrawable(poly, app.height, app.width)
