@@ -38,8 +38,8 @@ def rotatePoly(poly: np.array, norms: np.array, hasNorms, degX, degY, degZ):
         np.matmul(norms, rotationMatrix, norms)
 
 # Ahh, nasty! Fix this!
-zFar = 100
-zNear = 0.1
+zFar = 10
+zNear = 1
 zDiff = zFar-zNear
 fov = math.radians(90.0)
 fovCalculation = 1/math.tan(fov/2)
@@ -74,6 +74,27 @@ def makePolyDrawable(poly: np.array, height, width):
 
     normalizeMatrix = [width/2, height/2, 1, 1]
     poly *= normalizeMatrix
+
+def lookAt(poly: np.array, pos, towards, upward = [0, 1, 0, 1]):
+    forward = towards - pos
+    # forward = forward / np.linalg.norm(forward)
+    # upwardn = upward / np.linalg.norm(upward)
+
+    up = upward-(forward * np.dot(upward, forward))
+    upn = up / np.linalg.norm(up)
+    right = np.append(np.cross(upn[0:3], forward[0:3]), 1)
+
+
+    lookAtMatrix = [
+        [right[0], upn[0], forward[0], 0],
+        [right[1], upn[1], forward[1], 0],
+        [right[2], upn[2], forward[2], 0],
+        [np.dot(right, -pos), np.dot(upn, -pos), np.dot(forward, -pos), 1]
+    ]
+
+
+    np.matmul(poly, lookAtMatrix, poly)
+
 
 @dataclass
 class Mesh:

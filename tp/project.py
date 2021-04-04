@@ -21,16 +21,62 @@ def rgbToHex(r, g, b):
 
 def appStarted(app):
     updateProjection(app.height, app.width)
-    app.model = ply_importer.importPly("cube.ply")
-    app.cam = np.array([0, 0, 0, 1])
-    app.light = np.array([0, 0, -1, 1])
+    app.model = ply_importer.importPly("cone.ply")
+    
+    app.cam = np.array([0.0, 0.0, 0.0, 1])
+    app.camDir = np.array([0.0, 0.0, 1.0, 1])
+    app.yaw = 0
+
+    app.light = np.array([0.0, 0.0, -1.0, 1])
 
     targetFps = 144
-    app.timerDelay = 1000//targetFps
+    app.timerDelay = 1500//targetFps
     app.started = time.time()
+    app.lastMousePos = None
 
 def sizeChanged(app):
     updateProjection(app.height, app.width)
+
+def keyPressed(app, event):
+    key = event.key.lower()
+
+    print(app.cam, app.camDir)
+    if key == "w":
+        app.cam += app.camDir
+    elif key == "s":
+        app.cam -= app.camDir
+    elif key == "a":
+        app.cam[0] -= 1
+    elif key == "d":
+        app.cam[0] += 1
+    elif key == "up":
+        app.cam[1] += 1
+    elif key == "down":
+        app.cam[1] -= 1
+    elif key == "left":
+        app.yaw -= 15
+    elif key == "right":
+        app.yaw += 15
+        
+
+    rotYMatrix = np.array([
+        [math.cos(math.radians(app.yaw)), 0, math.sin(math.radians(app.yaw)), 0],
+        [0, 1, 0, 0],
+        [-math.sin(math.radians(app.yaw)), 0, math.cos(math.radians(app.yaw)), 0],
+        [0, 0, 0, 1]
+    ])
+    app.camDir = rotYMatrix @ np.array([0, 0, 1, 1])
+    
+        
+def mouseMoved(app, event):
+    pass
+    # if not app.lastMousePos:
+    #     app.lastMousePos = event
+    #     return
+
+    # dx = app.lastMousePos-event.x
+    # dy = app.lastMousePos-event.y
+
 
 def drawPolygon(app, canvas, polygon, color):
     v0 = polygon[0]
@@ -42,12 +88,13 @@ def drawPolygon(app, canvas, polygon, color):
 
 def paintersAlgorithm(polyAndColor):
     poly = polyAndColor[0]
-    return sum(vector[2] for vector in poly)/3
+    return -sum(vector[2] for vector in poly)/3
 
 
 # FURTHER OPTIMIZATION: Allocate one rotation and transform vector for the whole function
 # This can be extended to other ones like maybe makepolydrawable?
 # Serious excessive allocations right now
+# Should probably be put in a drawMesh function with that functionality^
 def redrawAll(app, canvas):
     startTime = time.time()
 
@@ -62,16 +109,16 @@ def redrawAll(app, canvas):
         # Translation
         translatePoly(poly, 0, 0, 4)
 
-        cull = False
+        cullCount = 0
         pr, pg, pb = 0, 0, 0
         if mesh.hasNormals:
             for i in range(len(poly)):
                 # Culling
                 vec, norm = poly[i], norms[i]
-                camDiff = vec-app.cam
+                camDiff = vec-app.camDir
                 camdp = np.dot(norm, camDiff)
                 if camdp > 0:
-                    cull = True
+                    cullCount += 1
                     break
                 # Flat lighting
                 r, g, b = 0, 162, 255
@@ -83,8 +130,11 @@ def redrawAll(app, canvas):
                 pg += g
                 pb += b
 
-        if cull:
+        if cullCount == 3:
             continue
+
+        towards = app.cam + app.camDir
+        lookAt(poly, app.cam, towards)
 
         # Projection
         projectPoly(poly, app.height, app.width)
@@ -104,7 +154,7 @@ def redrawAll(app, canvas):
     [drawPolygon(app, canvas, x[0], x[1]) for x in readyPolys]
 
     # fps counter
-    canvas.create_text(10, 10, text=int(1/(time.time()-startTime)), anchor="nw")
+    canvas.create_text(15, 15, text=int(1/(time.time()-startTime)), anchor="nw")
 
 def main():
     width = 1280
