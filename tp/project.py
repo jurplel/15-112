@@ -1,3 +1,9 @@
+# Sources
+# https://www.scratchapixel.com/
+# https://www.youtube.com/watch?v=ih20l3pJoeU (No code copied, just used to push concepts along!)
+# https://en.wikipedia.org/wiki/Rotation_matrix
+# https://sites.google.com/site/3dprogramminginpython/ (Did not look at any code!!!)
+
 from dataclasses import dataclass
 
 from cmu_112_graphics import *
@@ -61,6 +67,8 @@ def keyPressed(app, event):
         [0, 0, 0, 1]
     ])
     app.camDir = rotYMatrix @ np.array([0, 0, 1, 0])
+    print(app.camDir)
+    app.camDir = np.array([1, 0, 0, 0])
     
         
 def mouseMoved(app, event):
@@ -97,8 +105,7 @@ def redrawAll(app, canvas):
     theta2 = theta
     rotationMatrix = getRotationMatrix(theta, theta2, 0)
 
-    towards = app.cam + app.camDir
-    lookAtMatrix = getLookAtMatrix(app.cam, towards)
+    viewMatrix = getViewMatrix(app.cam, app.cam + app.camDir)
 
     transformMatrix = rotationMatrix @ translationMatrix
 
@@ -125,8 +132,8 @@ def redrawAll(app, canvas):
             g *= lightDiff
             b *= lightDiff
 
-        # Modify with camera position
-        np.matmul(poly, lookAtMatrix, poly)
+        # Move world relative to camera's supposed position
+        np.matmul(poly, viewMatrix, poly)
 
         # Perspective projection
         projectPoly(projectionMatrix, poly)

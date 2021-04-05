@@ -15,7 +15,7 @@ def getProjectionMatrix(height, width, fov = 90):
     projectionMatrix = np.array([
         [aRatio*fovCalculation, 0, 0, 0],
         [0, fovCalculation, 0, 0],
-        [0, 0, zFar/zDiff, 1],
+        [0, 0, -zFar/zDiff, -1],
         [0, 0, -(zFar*zNear)/zDiff, 0]
     ])
 
@@ -56,23 +56,26 @@ def getRotationMatrix(degX, degY, degZ):
     rotationMatrix = rotXMatrix @ rotYMatrix @ rotZMatrix
     return rotationMatrix
 
-def getLookAtMatrix(pos, towards, upward = np.array([0.0, 1.0, 0.0, 1.0])):
-    forward = towards - pos
-    normVec(forward)
+# This is the lookAt matrix
+def getViewMatrix(pos, towards, upward = np.array([0.0, 1.0, 0.0, 1.0])):
+    zForward = towards - pos
+    normVec(zForward)
+
     normVec(upward)
+    xRight = np.append(np.cross(zForward[0:3], upward[0:3]), 1) # this is so dumb!!
+    normVec(xRight)
 
-    up = upward-(forward * np.dot(upward, forward))
-    normVec(up)
-    right = np.append(np.cross(up[0:3], forward[0:3]), 1)
-
-    lookAtMatrix = np.array([
-        [right[0], up[0], forward[0], 0],
-        [right[1], up[1], forward[1], 0],
-        [right[2], up[2], forward[2], 0],
-        [np.dot(right, -pos), np.dot(up, -pos), np.dot(forward, -pos), 1]
+    yUp = np.append(np.cross(xRight[0:3], zForward[0:3]), 1) # yes, twice!
+    
+    # Not sure why pos needs to be negated here, but it just does!
+    viewMatrix = np.array([
+        [xRight[0], xRight[1], xRight[2], 0],
+        [yUp[0], yUp[1], yUp[2], 0],
+        [zForward[0], zForward[1], zForward[2], 0],
+        [np.dot(xRight, -pos), np.dot(yUp, -pos), np.dot(zForward, -pos), 1]
     ])
 
-    return lookAtMatrix
+    return viewMatrix
 
 def rotatePoly(rotationMatrix, poly: np.array, norms: np.array, hasNorms):
     np.matmul(poly, rotationMatrix, poly)
