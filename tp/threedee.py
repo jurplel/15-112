@@ -8,7 +8,7 @@ def getProjectionMatrix(height, width, fov = 90):
     zFar = 100
     zNear = 0.1
     zDiff = zFar-zNear
-    fov = math.radians(90.0)
+    fov = math.radians(fov)
     fovCalculation = 1/math.tan(fov/2)
     aRatio = height/width
 
@@ -57,15 +57,18 @@ def getRotationMatrix(degX, degY, degZ):
     return rotationMatrix
 
 # This is the lookAt matrix
-def getViewMatrix(pos, towards, upward = np.array([0.0, 1.0, 0.0, 1.0])):
-    zForward = towards - pos
+def getViewMatrix(pos, towards):
+    alwaysUpCheat = [0, 1, 0] # this only works if the camera never goes 90deg up or down (gimbal lock)
+
+    zForward = (towards - pos)[0:3]
     normVec(zForward)
 
-    normVec(upward)
-    xRight = np.append(np.cross(zForward[0:3], upward[0:3]), 1) # this is so dumb!!
+    xRight = np.cross(zForward, alwaysUpCheat)
     normVec(xRight)
 
-    yUp = np.append(np.cross(xRight[0:3], zForward[0:3]), 1) # yes, twice!
+    yUp = np.cross(xRight, zForward)
+
+    pos = pos[0:3] # This only applies to pos local (not a destructive op)
     
     # Not sure why pos needs to be negated here, but it just does!
     viewMatrix = np.array([

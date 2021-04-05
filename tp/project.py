@@ -67,8 +67,6 @@ def keyPressed(app, event):
         [0, 0, 0, 1]
     ])
     app.camDir = rotYMatrix @ np.array([0, 0, 1, 0])
-    print(app.camDir)
-    app.camDir = np.array([1, 0, 0, 0])
     
         
 def mouseMoved(app, event):
@@ -98,6 +96,8 @@ def redrawAll(app, canvas):
     startTime = time.time()
 
     # Get matrices once
+    # These matrices do not need to be gotten every redraw...
+    # should be stored in app and updated on resize or something
     
     translationMatrix = getTranslationMatrix(0, 0, 4)
 
