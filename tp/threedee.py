@@ -63,6 +63,7 @@ def getViewMatrix(pos, towards):
     zForward = (towards - pos)[0:3]
     normVec(zForward)
 
+    # These are not always perpendicular...
     xRight = np.cross(zForward, alwaysUpCheat)
     normVec(xRight)
 
@@ -88,7 +89,7 @@ def rotatePoly(rotationMatrix, poly: np.array, norms: np.array, hasNorms):
 def projectPoly(projectionMatrix, poly: np.array):
     np.matmul(poly, projectionMatrix, poly)
 
-    for i, vector in enumerate(poly):        
+    for i, vector in enumerate(poly):
         w = vector[3]
         if w == 0:
             break

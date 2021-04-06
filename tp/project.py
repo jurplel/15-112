@@ -24,6 +24,11 @@ def rgbToHex(r, g, b):
     b = clamp(int(b), 0, 255)
     return f'#{r:02x}{g:02x}{b:02x}'
 
+def setNewViewMatrix(app):
+    app.viewMatrix = getViewMatrix(app.cam, app.cam + app.camDir)
+
+def setNewProjectionMatrix(app):
+    app.projectionMatrix = getProjectionMatrix(app.height, app.width)
 
 def appStarted(app):
     app.model = ply_importer.importPly("diamonti.ply")
@@ -34,10 +39,16 @@ def appStarted(app):
 
     app.light = np.array([0.0, 0.0, -1.0, 0])
 
+    setNewProjectionMatrix(app)
+    setNewViewMatrix(app)
+
     targetFps = 144
     app.timerDelay = 1500//targetFps
     app.started = time.time()
-    app.lastMousePos = None
+    # app.lastMousePos = None
+
+def sizeChanged(app):
+    setNewProjectionMatrix(app)
 
 def keyPressed(app, event):
     key = event.key.lower()
@@ -67,6 +78,7 @@ def keyPressed(app, event):
         [0, 0, 0, 1]
     ])
     app.camDir = rotYMatrix @ np.array([0, 0, 1, 0])
+    setNewViewMatrix(app)
     
         
 def mouseMoved(app, event):
@@ -105,11 +117,7 @@ def redrawAll(app, canvas):
     theta2 = theta
     rotationMatrix = getRotationMatrix(theta, theta2, 0)
 
-    viewMatrix = getViewMatrix(app.cam, app.cam + app.camDir)
-
     transformMatrix = rotationMatrix @ translationMatrix
-
-    projectionMatrix = getProjectionMatrix(app.height, app.width)
 
     mesh = app.model
     newPolys = copy.deepcopy(mesh.polys)
@@ -133,10 +141,10 @@ def redrawAll(app, canvas):
             b *= lightDiff
 
         # Move world relative to camera's supposed position
-        np.matmul(poly, viewMatrix, poly)
+        np.matmul(poly, app.viewMatrix, poly)
 
         # Perspective projection
-        projectPoly(projectionMatrix, poly)
+        projectPoly(app.projectionMatrix, poly)
 
         # Convert to tkinter coords
         makePolyDrawable(poly, app.height, app.width)
