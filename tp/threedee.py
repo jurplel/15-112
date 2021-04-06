@@ -95,10 +95,6 @@ def projectPoly(projectionMatrix, poly: np.array):
         poly[i] /= w
 
 def makePolyDrawable(poly: np.array, height, width):
-    # Tkinter y coordinates are upside-down
-    invertYMatrix = [1, -1, 1, 1]
-    poly *= invertYMatrix
-
     addOneMatrix = [1, 1, 0, 0]
     poly += addOneMatrix
 
