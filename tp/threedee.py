@@ -95,7 +95,7 @@ def projectPoly(projectionMatrix, poly: np.array):
             break
         poly[i] /= w
 
-def makePolyDrawable(poly: np.array, height, width):
+def toRasterSpace(poly: np.array, height, width):
     addOneMatrix = [1, 1, 0, 0]
     poly += addOneMatrix
 

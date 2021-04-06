@@ -109,7 +109,7 @@ def redrawAll(app, canvas):
 
     # Get matrices once
     # These matrices do not need to be gotten every redraw...
-    # should be stored in app and updated on resize or something
+    # world space matrices can be stored in a Mesh/object class
     
     translationMatrix = getTranslationMatrix(0, 0, 4)
 
@@ -123,6 +123,7 @@ def redrawAll(app, canvas):
     newPolys = copy.deepcopy(mesh.polys)
     readyPolys = []
     for poly, norms in newPolys:
+        # To world space
         np.matmul(poly, transformMatrix, poly)
         np.matmul(norms, rotationMatrix, norms)
 
@@ -140,14 +141,14 @@ def redrawAll(app, canvas):
             g *= lightDiff
             b *= lightDiff
 
-        # Move world relative to camera's supposed position
+        # To camera space
         np.matmul(poly, app.viewMatrix, poly)
 
         # Perspective projection
         projectPoly(app.projectionMatrix, poly)
 
-        # Convert to tkinter coords
-        makePolyDrawable(poly, app.height, app.width)
+        # To raster space
+        toRasterSpace(poly, app.height, app.width)
 
         readyPolys.append((poly, rgbToHex(r, g, b)))
     
