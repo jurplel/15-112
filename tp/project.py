@@ -33,7 +33,6 @@ def setNewProjectionMatrix(app):
 
 def appStarted(app):
     app.model = ply_importer.importPly("cube.ply")
-    # app.model = createQuadPlane(10, 10)
     
     app.cam = np.array([0, 0, 0, 0], dtype=np.float64)
     app.camDir = np.array([0, 0, 1, 0], dtype=np.float64)
@@ -103,17 +102,15 @@ def timerFired(app):
             app.pitch -= angleStep
         
         if "left" in app.heldKeys:
-            app.yaw -= angleStep
-        elif "right" in app.heldKeys:
             app.yaw += angleStep
+        elif "right" in app.heldKeys:
+            app.yaw -= angleStep
 
         # gimbal lock prevent
         app.pitch = clamp(app.pitch, -90+15, 90-15)
 
-        pitchRotation = getXRotationMatrix(app.pitch)
-        yawRotation = getYRotationMatrix(app.yaw)
-        app.camDir = np.array([0, 0, 1, 0]) @ yawRotation
-        app.camDir = pitchRotation @ app.camDir
+        app.camDir = np.array([0, 0, 1, 0]) @ getYRotationMatrix(app.yaw)
+        app.camDir = getXRotationMatrix(app.pitch) @ app.camDir
         setNewViewMatrix(app)
 
     app.lastTime = time.time()
@@ -171,7 +168,7 @@ def redrawAll(app, canvas):
         # To camera space
         np.matmul(poly, app.viewMatrix, poly)
 
-        # Perspective projection to clip space
+        # Perspective projection to "homogenous clip space"
         np.matmul(poly, app.projectionMatrix, poly)
 
         # Remove if outside viewing zone
