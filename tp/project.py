@@ -76,23 +76,27 @@ def mouseMoved(app, event):
     # dy = app.lastMousePos-event.y
 
 def timerFired(app):
-    deltaTime = (time.time() - app.lastTime) * 10
+    deltaTime = time.time() - app.lastTime
+    speed = deltaTime * 10
     if app.heldKeys:
-        angleStep = 15
-        angleStep *= deltaTime
+        # vertex additions
         if "w" in app.heldKeys:
-            app.cam += app.camDir * deltaTime
+            app.cam += app.camDir * speed
         elif "s" in app.heldKeys:
-            app.cam -= app.camDir * deltaTime
+            app.cam -= app.camDir * speed
 
         sidewaysRotationMatrix = getRotationMatrix(0, 90, 0)
         sidewaysCamDir = sidewaysRotationMatrix @ app.camDir
 
         if "a" in app.heldKeys:
-            app.cam -= sidewaysCamDir * deltaTime
+            app.cam -= sidewaysCamDir * speed
         elif "d" in app.heldKeys:
-            app.cam += sidewaysCamDir * deltaTime
+            app.cam += sidewaysCamDir * speed
         
+        angleStep = 15
+        angleStep *= speed
+
+        # rotations
         if "up" in app.heldKeys:
             app.pitch += angleStep
         elif "down" in app.heldKeys:
@@ -103,10 +107,13 @@ def timerFired(app):
         elif "right" in app.heldKeys:
             app.yaw += angleStep
 
+        # gimbal lock prevent
         app.pitch = clamp(app.pitch, -90+15, 90-15)
 
-        camRotationMatrix = getRotationMatrix(app.pitch, app.yaw, 0)
-        app.camDir = camRotationMatrix @ np.array([0, 0, 1, 0])
+        pitchRotation = getXRotationMatrix(app.pitch)
+        yawRotation = getYRotationMatrix(app.yaw)
+        app.camDir = np.array([0, 0, 1, 0]) @ yawRotation
+        app.camDir = pitchRotation @ app.camDir
         setNewViewMatrix(app)
 
     app.lastTime = time.time()

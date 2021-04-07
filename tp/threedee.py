@@ -29,29 +29,44 @@ def getTranslationMatrix(x, y, z):
         [x, y, z, 1]
     ])
 
-def getRotationMatrix(degX, degY, degZ):
+def getXRotationMatrix(degX):
     alpha = math.radians(degX)
-    beta = math.radians(degY)
-    gamma = math.radians(degZ)
-    
     rotXMatrix = np.array([
         [1, 0, 0, 0],
         [0, math.cos(alpha), -math.sin(alpha), 0],
         [0, math.sin(alpha), math.cos(alpha), 0],
         [0, 0, 0, 1]
     ])
+
+    return rotXMatrix
+
+def getYRotationMatrix(degY):
+    beta = math.radians(degY)
     rotYMatrix = np.array([
         [math.cos(beta), 0, math.sin(beta), 0],
         [0, 1, 0, 0],
         [-math.sin(beta), 0, math.cos(beta), 0],
         [0, 0, 0, 1]
     ])
+
+    return rotYMatrix
+
+def getZRotationMatrix(degZ):
+    gamma = math.radians(degZ)
+
     rotZMatrix = np.array([
         [math.cos(gamma), -math.sin(gamma), 0, 0],
         [math.sin(gamma), math.cos(gamma), 0, 0],
         [0, 0, 1, 0],
         [0, 0, 0, 1]
     ])
+
+    return rotZMatrix
+
+def getRotationMatrix(degX, degY, degZ):
+    rotXMatrix = getXRotationMatrix(degX)
+    rotYMatrix = getYRotationMatrix(degY)
+    rotZMatrix = getZRotationMatrix(degZ)
 
     rotationMatrix = rotXMatrix @ rotYMatrix @ rotZMatrix
     return rotationMatrix
