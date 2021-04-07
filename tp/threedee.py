@@ -4,10 +4,8 @@ import numpy as np
 import math, copy
 
 # poly is a np.array of vectors (also np.arrays)
-def getProjectionMatrix(height, width, fov = 90):
-    zFar = 100
-    zNear = 0.1
-    zDiff = zFar-zNear
+def getProjectionMatrix(height, width, near, far, fov = 90):
+    diff = far-near
     fov = math.radians(fov)
     fovCalculation = 1/math.tan(fov/2)
     aRatio = height/width
@@ -15,8 +13,8 @@ def getProjectionMatrix(height, width, fov = 90):
     projectionMatrix = np.array([
         [aRatio*fovCalculation, 0, 0, 0],
         [0, fovCalculation, 0, 0],
-        [0, 0, -zFar/zDiff, -1],
-        [0, 0, -(zFar*zNear)/zDiff, 0]
+        [0, 0, -far/diff, -1],
+        [0, 0, -(far*near)/diff, 0]
     ])
 
     return projectionMatrix
@@ -86,13 +84,9 @@ def rotatePoly(rotationMatrix, poly: np.array, norms: np.array, hasNorms):
     if hasNorms:
         np.matmul(norms, rotationMatrix, norms)
 
-def projectPoly(projectionMatrix, poly: np.array):
-    np.matmul(poly, projectionMatrix, poly)
-
-    for i, vector in enumerate(poly):
-        w = vector[3]
-        if w == 0:
-            break
+def normalizeProjectedPoly(poly: np.array):
+    for i, vertex in enumerate(poly):
+        w = vertex[3]
         poly[i] /= w
 
 def toRasterSpace(poly: np.array, height, width):
@@ -101,6 +95,15 @@ def toRasterSpace(poly: np.array, height, width):
 
     normalizeMatrix = [width/2, height/2, 1, 1]
     poly *= normalizeMatrix
+
+# https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/projection-matrix-GPU-rendering-pipeline-clipping
+def clipPoly(poly: np.array):
+    for i, vertex in enumerate(poly):
+        w = vertex[3]
+        if w >= 0 or -w <= vertex[0] <= w:
+            return True
+
+    return False
 
 # Used instead of built in np.linalg.norm for performance reasons
 def normVec(vec: np.array):

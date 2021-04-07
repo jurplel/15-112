@@ -3,6 +3,7 @@
 # https://www.youtube.com/watch?v=ih20l3pJoeU (No code copied, just used to push concepts along!)
 # https://en.wikipedia.org/wiki/Rotation_matrix
 # https://sites.google.com/site/3dprogramminginpython/ (Did not look at any code!!!)
+# http://graphics.cs.cmu.edu/nsp/course/15-462/Spring04/slides/06-viewing.pdf
 
 from dataclasses import dataclass
 
@@ -28,7 +29,7 @@ def setNewViewMatrix(app):
     app.viewMatrix = getViewMatrix(app.cam, app.cam + app.camDir)
 
 def setNewProjectionMatrix(app):
-    app.projectionMatrix = getProjectionMatrix(app.height, app.width)
+    app.projectionMatrix = getProjectionMatrix(app.height, app.width, app.near, app.far, app.fov)
 
 def appStarted(app):
     app.model = ply_importer.importPly("diamonti.ply")
@@ -38,6 +39,10 @@ def appStarted(app):
     app.yaw = 0
 
     app.light = np.array([0.0, 0.0, -1.0, 0])
+
+    app.fov = 90
+    app.near = 0.1
+    app.far = 100
 
     setNewProjectionMatrix(app)
     setNewViewMatrix(app)
@@ -70,14 +75,8 @@ def keyPressed(app, event):
     elif key == "right":
         app.yaw += 15
         
-
-    rotYMatrix = np.array([
-        [math.cos(math.radians(app.yaw)), 0, math.sin(math.radians(app.yaw)), 0],
-        [0, 1, 0, 0],
-        [-math.sin(math.radians(app.yaw)), 0, math.cos(math.radians(app.yaw)), 0],
-        [0, 0, 0, 1]
-    ])
-    app.camDir = rotYMatrix @ np.array([0, 0, 1, 0])
+    yawMatrix = getRotationMatrix(0, app.yaw, 0)
+    app.camDir = yawMatrix @ np.array([0, 0, 1, 0])
     setNewViewMatrix(app)
     
         
@@ -97,7 +96,7 @@ def drawPolygon(app, canvas, polygon, color):
     v2 = polygon[2]
 
     canvas.create_polygon(v0[0], v0[1], v1[0], v1[1], v2[0], v2[1], 
-                        outline=color, fill=color)
+                        outline="black", fill=color)
 
 def paintersAlgorithm(polyAndColor):
     poly = polyAndColor[0]
@@ -144,8 +143,15 @@ def redrawAll(app, canvas):
         # To camera space
         np.matmul(poly, app.viewMatrix, poly)
 
-        # Perspective projection
-        projectPoly(app.projectionMatrix, poly)
+        # Perspective projection to clip space
+        np.matmul(poly, app.projectionMatrix, poly)
+
+        # Remove if outside viewing zone
+        if clipPoly(poly):
+            continue
+
+        # From clip space to normalized projection
+        normalizeProjectedPoly(poly)
 
         # To raster space
         toRasterSpace(poly, app.height, app.width)
