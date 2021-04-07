@@ -1,4 +1,4 @@
-# Sources
+# Some sources
 # https://www.scratchapixel.com/
 # https://www.youtube.com/watch?v=ih20l3pJoeU (No code copied, just used to push concepts along!)
 # https://en.wikipedia.org/wiki/Rotation_matrix
@@ -29,20 +29,22 @@ def setNewViewMatrix(app):
     app.viewMatrix = getViewMatrix(app.cam, app.cam + app.camDir)
 
 def setNewProjectionMatrix(app):
-    app.projectionMatrix = getProjectionMatrix(app.height, app.width, app.near, app.far, app.fov)
+    app.projectionMatrix = getProjectionMatrix(app.height, app.width, app.fov)
 
 def appStarted(app):
-    app.model = ply_importer.importPly("diamonti.ply")
+    app.model = ply_importer.importPly("cube.ply")
+    # app.model = createQuadPlane(10, 10)
     
-    app.cam = np.array([0.0, 0.0, 0.0, 0])
-    app.camDir = np.array([0.0, 0.0, 1.0, 0])
+    app.cam = np.array([0, 0, 0, 0], dtype=np.float64)
+    app.camDir = np.array([0, 0, 1, 0], dtype=np.float64)
     app.yaw = 0
+    app.pitch = 0
 
-    app.light = np.array([0.0, 0.0, -1.0, 0])
+    app.light = np.array([0, 0, -1, 0])
 
     app.fov = 90
-    app.near = 0.1
-    app.far = 100
+
+    app.wireframe = False
 
     setNewProjectionMatrix(app)
     setNewViewMatrix(app)
@@ -67,19 +69,20 @@ def keyPressed(app, event):
     elif key == "d":
         app.cam[0] += 1
     elif key == "up":
-        app.cam[1] += 1
+        app.pitch += 15
     elif key == "down":
-        app.cam[1] -= 1
+        app.pitch -= 15
     elif key == "left":
         app.yaw -= 15
     elif key == "right":
         app.yaw += 15
         
-    yawMatrix = getRotationMatrix(0, app.yaw, 0)
-    app.camDir = yawMatrix @ np.array([0, 0, 1, 0])
+    app.pitch = clamp(app.pitch, -90+15, 90-15)
+
+    camRotationMatrix = getRotationMatrix(app.pitch, app.yaw, 0)
+    app.camDir = camRotationMatrix @ np.array([0, 0, 1, 0])
     setNewViewMatrix(app)
     
-        
 def mouseMoved(app, event):
     pass
     # if not app.lastMousePos:
@@ -89,14 +92,14 @@ def mouseMoved(app, event):
     # dx = app.lastMousePos-event.x
     # dy = app.lastMousePos-event.y
 
-
 def drawPolygon(app, canvas, polygon, color):
     v0 = polygon[0]
     v1 = polygon[1]
     v2 = polygon[2]
 
+    if app.wireframe: color = "black"
     canvas.create_polygon(v0[0], v0[1], v1[0], v1[1], v2[0], v2[1], 
-                        outline="black", fill=color)
+                        outline=color, fill=color)
 
 def paintersAlgorithm(polyAndColor):
     poly = polyAndColor[0]
@@ -113,8 +116,7 @@ def redrawAll(app, canvas):
     translationMatrix = getTranslationMatrix(0, 0, 4)
 
     theta = 20.0 * (time.time()-app.started)
-    theta2 = theta
-    rotationMatrix = getRotationMatrix(theta, theta2, 0)
+    rotationMatrix = getRotationMatrix(0, theta, 0)
 
     transformMatrix = rotationMatrix @ translationMatrix
 
@@ -128,17 +130,16 @@ def redrawAll(app, canvas):
 
         r, g, b = 0, 162, 255
         if mesh.hasNormals:
-            # Culling
             avgNormal = np.add.reduce(norms) / len(norms)
-            camRay = poly[0] - app.cam
-            camDiff = np.dot(avgNormal, camRay)
-            if camDiff > 0:
+            # Culling
+            if cull(avgNormal, poly, app.cam):
                 continue
+
             # Flat shading
-            lightDiff = max(0.25, np.dot(avgNormal, app.light))
-            r *= lightDiff
-            g *= lightDiff
-            b *= lightDiff
+            lightFactor = flatLightingFactor(avgNormal, app.light)
+            r *= lightFactor
+            g *= lightFactor
+            b *= lightFactor
 
         # To camera space
         np.matmul(poly, app.viewMatrix, poly)
@@ -147,11 +148,9 @@ def redrawAll(app, canvas):
         np.matmul(poly, app.projectionMatrix, poly)
 
         # Remove if outside viewing zone
-        if clipPoly(poly):
+        # and convert from clip space to normalized projection
+        if clipAndNormalizeProjectedPoly(poly):
             continue
-
-        # From clip space to normalized projection
-        normalizeProjectedPoly(poly)
 
         # To raster space
         toRasterSpace(poly, app.height, app.width)

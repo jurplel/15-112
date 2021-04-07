@@ -4,7 +4,9 @@ import numpy as np
 import math, copy
 
 # poly is a np.array of vectors (also np.arrays)
-def getProjectionMatrix(height, width, near, far, fov = 90):
+def getProjectionMatrix(height, width, fov = 90):
+    far = 100 # Constants i guess idk
+    near = 0.1
     diff = far-near
     fov = math.radians(fov)
     fovCalculation = 1/math.tan(fov/2)
@@ -84,10 +86,17 @@ def rotatePoly(rotationMatrix, poly: np.array, norms: np.array, hasNorms):
     if hasNorms:
         np.matmul(norms, rotationMatrix, norms)
 
-def normalizeProjectedPoly(poly: np.array):
+# https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/projection-matrix-GPU-rendering-pipeline-clipping
+# returns true if poly should be skipped
+def clipAndNormalizeProjectedPoly(poly: np.array):
     for i, vertex in enumerate(poly):
         w = vertex[3]
+        # If outside of view
+        if w >= 0 or -w <= vertex[0] <= w:
+            return True
         poly[i] /= w
+
+    return False
 
 def toRasterSpace(poly: np.array, height, width):
     addOneMatrix = [1, 1, 0, 0]
@@ -96,19 +105,34 @@ def toRasterSpace(poly: np.array, height, width):
     normalizeMatrix = [width/2, height/2, 1, 1]
     poly *= normalizeMatrix
 
-# https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/projection-matrix-GPU-rendering-pipeline-clipping
-def clipPoly(poly: np.array):
-    for i, vertex in enumerate(poly):
-        w = vertex[3]
-        if w >= 0 or -w <= vertex[0] <= w:
-            return True
-
+def cull(avgNormal, poly, camPos):
+    camRay = poly[0] - camPos
+    camDiff = np.dot(avgNormal, camRay)
+    if camDiff > 0:
+        return True
     return False
+
+def flatLightingFactor(avgNormal, lightVector):
+    return max(0.25, np.dot(avgNormal, lightVector))
 
 # Used instead of built in np.linalg.norm for performance reasons
 def normVec(vec: np.array):
     magnitude = math.sqrt(vec[0]**2+vec[1]**2+vec[2]**2)
     vec /= magnitude
+
+def createQuadPlane(height, width):
+    poly0 = np.array([
+        [0, height, 0, 1],
+        [width, height, 0, 1],
+        [width, 0, 0, 1]
+    ], np.float64)
+    poly1 = np.array([
+        [width, 0, 0, 1],
+        [0, 0, 0, 1],
+        [0, height, 0, 1]
+    ], dtype=np.float64)
+    norm = np.tile(np.array([0, 0, 1, 0], dtype=np.float64), (3, 1))
+    return Mesh(np.array([(poly0, norm), (poly1, norm)]), True)
 
 @dataclass
 class Mesh:
