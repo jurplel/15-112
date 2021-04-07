@@ -52,37 +52,20 @@ def appStarted(app):
     targetFps = 144
     app.timerDelay = 1500//targetFps
     app.started = time.time()
-    # app.lastMousePos = None
+    app.lastTime = time.time()
+    app.heldKeys = set()
 
 def sizeChanged(app):
     setNewProjectionMatrix(app)
 
 def keyPressed(app, event):
     key = event.key.lower()
+    app.heldKeys.add(key)
 
-    if key == "w":
-        app.cam += app.camDir
-    elif key == "s":
-        app.cam -= app.camDir
-    elif key == "a":
-        app.cam[0] -= 1
-    elif key == "d":
-        app.cam[0] += 1
-    elif key == "up":
-        app.pitch += 15
-    elif key == "down":
-        app.pitch -= 15
-    elif key == "left":
-        app.yaw -= 15
-    elif key == "right":
-        app.yaw += 15
-        
-    app.pitch = clamp(app.pitch, -90+15, 90-15)
+def keyReleased(app, event):
+    key = event.key.lower()
+    app.heldKeys.remove(key)
 
-    camRotationMatrix = getRotationMatrix(app.pitch, app.yaw, 0)
-    app.camDir = camRotationMatrix @ np.array([0, 0, 1, 0])
-    setNewViewMatrix(app)
-    
 def mouseMoved(app, event):
     pass
     # if not app.lastMousePos:
@@ -91,6 +74,43 @@ def mouseMoved(app, event):
 
     # dx = app.lastMousePos-event.x
     # dy = app.lastMousePos-event.y
+
+def timerFired(app):
+    deltaTime = (time.time() - app.lastTime) * 10
+    if app.heldKeys:
+        angleStep = 15
+        angleStep *= deltaTime
+        if "w" in app.heldKeys:
+            app.cam += app.camDir * deltaTime
+        elif "s" in app.heldKeys:
+            app.cam -= app.camDir * deltaTime
+
+        sidewaysRotationMatrix = getRotationMatrix(0, 90, 0)
+        sidewaysCamDir = sidewaysRotationMatrix @ app.camDir
+
+        if "a" in app.heldKeys:
+            app.cam -= sidewaysCamDir * deltaTime
+        elif "d" in app.heldKeys:
+            app.cam += sidewaysCamDir * deltaTime
+        
+        if "up" in app.heldKeys:
+            app.pitch += angleStep
+        elif "down" in app.heldKeys:
+            app.pitch -= angleStep
+        
+        if "left" in app.heldKeys:
+            app.yaw -= angleStep
+        elif "right" in app.heldKeys:
+            app.yaw += angleStep
+
+        app.pitch = clamp(app.pitch, -90+15, 90-15)
+
+        camRotationMatrix = getRotationMatrix(app.pitch, app.yaw, 0)
+        app.camDir = camRotationMatrix @ np.array([0, 0, 1, 0])
+        setNewViewMatrix(app)
+
+    app.lastTime = time.time()
+
 
 def drawPolygon(app, canvas, polygon, color):
     v0 = polygon[0]
