@@ -32,7 +32,7 @@ def setNewProjectionMatrix(app):
     app.projectionMatrix = getProjectionMatrix(app.height, app.width, app.fov)
 
 def appStarted(app):
-    app.model = ply_importer.importPly("cube.ply")
+    app.model = ply_importer.importPly("diamonti.ply")
     
     app.cam = np.array([0, 0, 0, 0], dtype=np.float64)
     app.camDir = np.array([0, 0, 1, 0], dtype=np.float64)
@@ -121,9 +121,9 @@ def drawPolygon(app, canvas, polygon, color):
     v1 = polygon[1]
     v2 = polygon[2]
 
-    if app.wireframe: color = "black"
+    outlineColor = "black" if app.wireframe else color
     canvas.create_polygon(v0[0], v0[1], v1[0], v1[1], v2[0], v2[1], 
-                        outline=color, fill=color)
+                        outline=outlineColor, fill=color)
 
 def paintersAlgorithm(polyAndColor):
     poly = polyAndColor[0]
