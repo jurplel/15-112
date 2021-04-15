@@ -32,7 +32,8 @@ def setNewProjectionMatrix(app):
     app.projectionMatrix = getProjectionMatrix(app.height, app.width, app.fov)
 
 def appStarted(app):
-    app.model = ply_importer.importPly("diamonti.ply")
+    # app.model = ply_importer.importPly("cube.ply")
+    app.model = createQuadPlane(10, 10)
     
     app.cam = np.array([0, 0, 0, 0], dtype=np.float64)
     app.camDir = np.array([0, 0, 1, 0], dtype=np.float64)
@@ -43,7 +44,7 @@ def appStarted(app):
 
     app.fov = 90
 
-    app.wireframe = False
+    app.wireframe = True
 
     setNewProjectionMatrix(app)
     setNewViewMatrix(app)
@@ -137,10 +138,10 @@ def redrawAll(app, canvas):
     # These matrices do not need to be gotten every redraw...
     # world space matrices can be stored in a Mesh/object class
     
-    translationMatrix = getTranslationMatrix(0, 0, 4)
+    translationMatrix = getTranslationMatrix(0, -4, 4)
 
     theta = 20.0 * (time.time()-app.started)
-    rotationMatrix = getRotationMatrix(0, theta, 0)
+    rotationMatrix = getRotationMatrix(0, 160, 0)
 
     transformMatrix = rotationMatrix @ translationMatrix
 
@@ -168,16 +169,30 @@ def redrawAll(app, canvas):
         # To camera space
         np.matmul(poly, app.viewMatrix, poly)
 
+        # skip = False
+        # for i, vec in enumerate(poly):
+            # if vec[2] < 0.1:
+                # skip = True
+
+        # if skip:
+            # continue
+
         # Perspective projection to "homogenous clip space"
         np.matmul(poly, app.projectionMatrix, poly)
 
-        # Remove if outside viewing zone
-        # and convert from clip space to normalized projection
-        if clipAndNormalizeProjectedPoly(poly):
-            continue
+        # Convert from clip space to normalized projection
+        normalizeProjectedPoly(poly)
 
         # To raster space
         toRasterSpace(poly, app.height, app.width)
+
+        # Clip polygons outside of the zone
+        # clipResult = clipRasterSpacePoly(poly, app.height, app.width)
+        # if clipResult[0] == False:
+        #     continue
+        # elif clipResult[0] == True:
+        #     readyPolys.extend([(newClipPoly, rgbToHex(r, g, b)) for newClipPoly in clipResult[1]])
+
 
         readyPolys.append((poly, rgbToHex(r, g, b)))
     

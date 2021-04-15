@@ -46,7 +46,6 @@ def readBody(headerInfo, fileAsString):
     vertices = []
     normals = []
     polygons = []
-    normalPolygons = []
 
     lines = fileAsString.splitlines()
 
@@ -75,10 +74,9 @@ def readBody(headerInfo, fileAsString):
                 normals[ints[2]], 
                 normals[ints[3]]])
             
-
         polygons.append((poly, normPoly))
 
-    return Mesh(np.array(polygons), headerInfo.hasNormals)
+    return Mesh(polygons, headerInfo.hasNormals)
 
 
 
