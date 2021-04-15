@@ -202,6 +202,7 @@ def clipRasterSpacePoly(poly: np.array, height, width):
 
     return (True, newPolys)
 
+# Concept from https://www.youtube.com/watch?v=HXSuNxpCzdM
 def nearClipViewSpacePoly(poly: np.array, zNear = 1):
     newPolys = []
     clipped = []
@@ -216,28 +217,21 @@ def nearClipViewSpacePoly(poly: np.array, zNear = 1):
 
     notClipped = (set([0, 1, 2]) - set(clipped))
     if len(clipped) == 1:
-        P1 = poly[clipped[0]]
-        P2 = poly[notClipped.pop()]
-        P3 = poly[notClipped.pop()]
-        intersection1 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], P1[0:3], P2[0:3])
-        intersection2 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], P1[0:3], P3[0:3])
-        poly[clipped[0]][0] = intersection1[0]
-        poly[clipped[0]][1] = intersection1[1]
-        poly[clipped[0]][2] = intersection1[2]
-        newPolys.append(np.array([P1, P3, np.append(intersection2, 1)]))
+        poly1 = poly[clipped[0]]
+        poly2 = poly[notClipped.pop()]
+        poly3 = poly[notClipped.pop()]
+        intersection1 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], poly1[0:3], poly2[0:3])
+        intersection2 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], poly1[0:3], poly3[0:3])
+        np.put(poly1, [0, 1, 2], intersection1)
+        newPolys.append(np.array([poly1, poly3, np.append(intersection2, 1)]))
     elif len(clipped) == 2:
-        P1 = poly[clipped[0]]
-        P2 = poly[clipped[1]]
-        P3 = poly[notClipped.pop()]
-        intersection1 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], P1[0:3], P3[0:3])
-        intersection2 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], P2[0:3], P3[0:3])
-        poly[clipped[0]][0] = intersection1[0]
-        poly[clipped[0]][1] = intersection1[1]
-        poly[clipped[0]][2] = intersection1[2]
-        poly[clipped[1]][0] = intersection2[0]
-        poly[clipped[1]][1] = intersection2[1]
-        poly[clipped[1]][2] = intersection2[2]
-
+        poly1 = poly[clipped[0]]
+        poly2 = poly[clipped[1]]
+        poly3 = poly[notClipped.pop()]
+        intersection1 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], poly1[0:3], poly3[0:3])
+        intersection2 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], poly2[0:3], poly3[0:3])
+        np.put(poly1, [0, 1, 2], intersection1)
+        np.put(poly2, [0, 1, 2], intersection2)
 
     return (True, newPolys)
     

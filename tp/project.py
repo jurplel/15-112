@@ -44,7 +44,7 @@ def appStarted(app):
 
     app.fov = 90
 
-    app.wireframe = True
+    app.wireframe = False
 
     setNewProjectionMatrix(app)
     setNewViewMatrix(app)
