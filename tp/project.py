@@ -33,7 +33,7 @@ def setNewProjectionMatrix(app):
 
 def appStarted(app):
     # app.model = ply_importer.importPly("cube.ply")
-    app.model = createQuadPlane(10, 10)
+    app.model = createQuadPlane(10, 100)
     
     app.cam = np.array([0, 0, 0, 0], dtype=np.float64)
     app.camDir = np.array([0, 0, 1, 0], dtype=np.float64)
@@ -169,13 +169,17 @@ def redrawAll(app, canvas):
         # To camera space
         np.matmul(poly, app.viewMatrix, poly)
 
-        # skip = False
-        # for i, vec in enumerate(poly):
-            # if vec[2] < 0.1:
-                # skip = True
-
-        # if skip:
-            # continue
+        # Clip against z near clipping plane
+        clipResult = nearClipViewSpacePoly(poly)
+        if clipResult[0] == False:
+            continue
+        elif clipResult[0] == True:
+            newClipPolys = clipResult[1]
+            for newClipPoly in newClipPolys:
+                np.matmul(newClipPoly, app.projectionMatrix, newClipPoly)
+                normalizeProjectedPoly(newClipPoly)
+                toRasterSpace(newClipPoly, app.height, app.width)
+                readyPolys.append((newClipPoly, rgbToHex(r, g, b)))
 
         # Perspective projection to "homogenous clip space"
         np.matmul(poly, app.projectionMatrix, poly)
@@ -186,13 +190,13 @@ def redrawAll(app, canvas):
         # To raster space
         toRasterSpace(poly, app.height, app.width)
 
+
         # Clip polygons outside of the zone
         # clipResult = clipRasterSpacePoly(poly, app.height, app.width)
         # if clipResult[0] == False:
         #     continue
         # elif clipResult[0] == True:
         #     readyPolys.extend([(newClipPoly, rgbToHex(r, g, b)) for newClipPoly in clipResult[1]])
-
 
         readyPolys.append((poly, rgbToHex(r, g, b)))
     

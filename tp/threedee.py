@@ -10,7 +10,7 @@ import math, copy
 # https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/building-basic-perspective-projection-matrix
 def getProjectionMatrix(height, width, fov = 90):
     far = 100 # Constants i guess idk
-    near = 0.1
+    near = 1
     diff = far-near
     fov = math.radians(fov)
     fovCalculation = 1/math.tan(fov/2)
@@ -156,11 +156,14 @@ def outsideViewport(vec: np.array, dir: Dir, height, width):
 
     raise Exception("Bad direction for getViewportEdgeLineRepr!")
 
-def linePlaneIntersection(plane: np.array, planeNorm: np.array, P1, P2):
-    normalizeProjectedPoly(planeNorm)
+# from https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-plane-and-ray-disk-intersection
+def linePlaneIntersection(plane: np.array, planeNorm: np.array, P0, P1):
+    rayDir = P1-P0
+    t = np.dot((plane-P0), planeNorm)/(np.dot(rayDir, planeNorm))
+    P = P0 + rayDir*t
+    return P
 
 def clipRasterSpacePoly(poly: np.array, height, width):
-
     newPolys = []
     for dir in Dir:
         clipped = []
@@ -183,8 +186,7 @@ def clipRasterSpacePoly(poly: np.array, height, width):
             intersection2 = lineLineIntersection(P1, P3, VP1, VP2)
             poly[clipped[0]][0] = intersection1[0]
             poly[clipped[0]][1] = intersection1[1]
-            newPolys.append(np.array([P1, P3, np.append(intersection2, P1[2])], dtype=object))
-            clipRasterSpacePoly
+            newPolys.append(np.array([P1, P3, np.append(intersection2, P1[2])]))
 
         elif len(clipped) == 2:
             # Modify existing polygon to intersection points
@@ -200,7 +202,8 @@ def clipRasterSpacePoly(poly: np.array, height, width):
 
     return (True, newPolys)
 
-def nearClipViewSpacePoly(poly: np.array, zNear = 0.1):
+def nearClipViewSpacePoly(poly: np.array, zNear = 1):
+    newPolys = []
     clipped = []
     for i, vec in enumerate(poly):
         if vec[2] < zNear:
@@ -212,7 +215,31 @@ def nearClipViewSpacePoly(poly: np.array, zNear = 0.1):
         return (False, None)
 
     notClipped = (set([0, 1, 2]) - set(clipped))
-    
+    if len(clipped) == 1:
+        P1 = poly[clipped[0]]
+        P2 = poly[notClipped.pop()]
+        P3 = poly[notClipped.pop()]
+        intersection1 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], P1[0:3], P2[0:3])
+        intersection2 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], P1[0:3], P3[0:3])
+        poly[clipped[0]][0] = intersection1[0]
+        poly[clipped[0]][1] = intersection1[1]
+        poly[clipped[0]][2] = intersection1[2]
+        newPolys.append(np.array([P1, P3, np.append(intersection2, 1)]))
+    elif len(clipped) == 2:
+        P1 = poly[clipped[0]]
+        P2 = poly[clipped[1]]
+        P3 = poly[notClipped.pop()]
+        intersection1 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], P1[0:3], P3[0:3])
+        intersection2 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], P2[0:3], P3[0:3])
+        poly[clipped[0]][0] = intersection1[0]
+        poly[clipped[0]][1] = intersection1[1]
+        poly[clipped[0]][2] = intersection1[2]
+        poly[clipped[1]][0] = intersection2[0]
+        poly[clipped[1]][1] = intersection2[1]
+        poly[clipped[1]][2] = intersection2[2]
+
+
+    return (True, newPolys)
     
 
 
