@@ -190,14 +190,6 @@ def redrawAll(app, canvas):
         # To raster space
         toRasterSpace(poly, app.height, app.width)
 
-
-        # Clip polygons outside of the zone
-        # clipResult = clipRasterSpacePoly(poly, app.height, app.width)
-        # if clipResult[0] == False:
-        #     continue
-        # elif clipResult[0] == True:
-        #     readyPolys.extend([(newClipPoly, rgbToHex(r, g, b)) for newClipPoly in clipResult[1]])
-
         readyPolys.append((poly, rgbToHex(r, g, b)))
     
     # Draw in order with painter's algorithm
