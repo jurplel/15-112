@@ -44,7 +44,7 @@ class Mesh:
             elif clipResult[0] == True:
                 newClipPolys = clipResult[1]
                 for newClipPoly in newClipPolys:
-                    projectPoly(poly, projMatrix)
+                    projectPoly(newClipPoly, projMatrix)
                     toRasterSpace(newClipPoly, height, width)
                     readyPolys.append((newClipPoly, lightedColor.toHex()))
 
