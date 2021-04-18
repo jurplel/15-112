@@ -4,6 +4,59 @@ from enum import Enum
 import numpy as np
 import math, copy
 
+from util import *
+
+class Mesh:
+    def __init__(self, polys, hasNormals):
+        self.polys = polys
+        self.hasNormals = hasNormals
+        self.translationMatrix = getTranslationMatrix(0, 0, 4)
+        self.rotationMatrix = getRotationMatrix(0, 160, 0)
+        self.transformMatrix = self.rotationMatrix @ self.translationMatrix
+        self.color = Color(0, 162, 255)
+
+    def process(self, camPos, lightDir, height, width, projMatrix, viewMatrix):
+        newPolys = copy.deepcopy(self.polys)
+        readyPolys = []
+        for poly, norms in newPolys:
+            # To world space
+            np.matmul(poly, self.transformMatrix, poly)
+            np.matmul(norms, self.rotationMatrix, norms)
+
+            lightedColor = None
+            if self.hasNormals:
+                avgNormal = np.add.reduce(norms) / len(norms)
+                # Culling
+                if cull(avgNormal, poly, camPos):
+                    continue
+
+                # Flat shading
+                lightFactor = flatLightingFactor(avgNormal, lightDir)
+                lightedColor = self.color * lightFactor
+
+            # To camera space
+            np.matmul(poly, viewMatrix, poly)
+
+            # Clip against z near clipping plane
+            clipResult = nearClipViewSpacePoly(poly)
+            if clipResult[0] == False:
+                continue
+            elif clipResult[0] == True:
+                newClipPolys = clipResult[1]
+                for newClipPoly in newClipPolys:
+                    projectPoly(poly, projMatrix)
+                    toRasterSpace(newClipPoly, height, width)
+                    readyPolys.append((newClipPoly, lightedColor.toHex()))
+
+            # Perspective projection
+            projectPoly(poly, projMatrix)
+
+            # To raster space
+            toRasterSpace(poly, height, width)
+
+            readyPolys.append((poly, lightedColor.toHex()))
+
+        return readyPolys
 
 
 # poly is a np.array of vectors (also np.arrays)
@@ -100,15 +153,17 @@ def getViewMatrix(pos, towards):
 
     return viewMatrix
 
+def projectPoly(poly: np.array, projectionMatrix):
+    np.matmul(poly, projectionMatrix, poly)
+    # Convert from homogenous projection to normalized projection
+    for i, vertex in enumerate(poly):
+        w = vertex[3]
+        poly[i] /= w
+
 def rotatePoly(rotationMatrix, poly: np.array, norms: np.array, hasNorms):
     np.matmul(poly, rotationMatrix, poly)
     if hasNorms:
         np.matmul(norms, rotationMatrix, norms)
-
-def normalizeProjectedPoly(poly: np.array):
-    for i, vertex in enumerate(poly):
-        w = vertex[3]
-        poly[i] /= w
 
 def toRasterSpace(poly: np.array, height, width):
     addOneMatrix = [1, 1, 0, 0]
@@ -167,6 +222,10 @@ def cull(avgNormal, poly, camPos):
 def flatLightingFactor(avgNormal, lightVector):
     return max(0.25, np.dot(avgNormal, lightVector))
 
+def paintersAlgorithm(polyAndColor):
+    poly = polyAndColor[0]
+    return -sum(vector[2] for vector in poly)/3
+
 # Used instead of built in np.linalg.norm for performance reasons
 def normVec(vec: np.array):
     magnitude = math.sqrt(vec[0]**2+vec[1]**2+vec[2]**2)
@@ -185,8 +244,3 @@ def createQuadPlane(height, width):
     ], dtype=np.float64)
     norm = np.tile(np.array([0, 0, 1, 0], dtype=np.float64), (3, 1))
     return Mesh([(poly0, norm), (poly1, np.copy(norm))], True)
-
-@dataclass
-class Mesh:
-    polys: list
-    hasNormals: bool
