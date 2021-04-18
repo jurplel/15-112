@@ -236,7 +236,7 @@ def createQuadPlane(height, width):
         [0, height, 0, 1],
         [width, height, 0, 1],
         [width, 0, 0, 1]
-    ], np.float64)
+    ], dtype=np.float64)
     poly1 = np.array([
         [width, 0, 0, 1],
         [0, 0, 0, 1],
