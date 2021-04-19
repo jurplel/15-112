@@ -2,7 +2,6 @@
 # https://www.scratchapixel.com/
 # https://www.youtube.com/watch?v=ih20l3pJoeU (No code copied, just used to push concepts along!)
 # https://en.wikipedia.org/wiki/Rotation_matrix
-# https://sites.google.com/site/3dprogramminginpython/ (Did not look at any code!!!)
 # http://graphics.cs.cmu.edu/nsp/course/15-462/Spring04/slides/06-viewing.pdf
 
 from dataclasses import dataclass
