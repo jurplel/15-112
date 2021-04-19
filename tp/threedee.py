@@ -10,7 +10,7 @@ class Mesh:
     def __init__(self, polys, hasNormals):
         self.polys = polys
         self.hasNormals = hasNormals
-        self.translationMatrix = getTranslationMatrix(0, 0, 4)
+        self.translationMatrix = getTranslationMatrix(0, -4, 4)
         self.rotationMatrix = getRotationMatrix(0, 160, 0)
         self.transformMatrix = self.rotationMatrix @ self.translationMatrix
         self.color = Color(0, 162, 255)
@@ -230,6 +230,38 @@ def paintersAlgorithm(polyAndColor):
 def normVec(vec: np.array):
     magnitude = math.sqrt(vec[0]**2+vec[1]**2+vec[2]**2)
     vec /= magnitude
+
+def createRoom(height, width, depth):
+    plane0 = createQuadPlane(depth, height).polys
+    plane1 = copy.deepcopy(plane0)
+
+    for poly, norm in plane1:
+        for vec in poly:
+            vec[2] += width
+        
+        for vec in norm:
+            vec *= -1
+
+    plane2 = createQuadPlane(depth, width).polys
+    rot90 = getYRotationMatrix(90)
+    for poly, norm in plane2:
+        np.matmul(poly, rot90, poly)
+        np.matmul(norm, rot90, norm)
+            
+
+    plane3 = copy.deepcopy(plane2)
+
+    for poly, norm in plane2:
+        for vec in poly:
+            vec[0] += height
+
+    for poly, norm in plane3:
+        for vec in norm:
+            vec *= -1
+
+    polys = plane0 + plane1 + plane2 + plane3
+    return Mesh(polys, True)
+
 
 def createQuadPlane(height, width):
     poly0 = np.array([

@@ -24,8 +24,7 @@ def setNewProjectionMatrix(app):
 
 def appStarted(app):
     app.drawables = []
-    # app.drawables.append(ply_importer.importPly("cube.ply"))
-    app.drawables.append(createQuadPlane(10, 100))
+    app.drawables.append(createRoom(50, 100, 10))
     
     app.cam = np.array([0, 0, 0, 0], dtype=np.float64)
     app.camDir = np.array([0, 0, 1, 0], dtype=np.float64)
