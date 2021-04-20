@@ -8,6 +8,7 @@ import math, time
 import ply_importer
 
 from threedee import *
+from game import *
 
 def setNewViewMatrix(app):
     app.viewMatrix = getViewMatrix(app.cam, app.cam + app.camDir)
@@ -19,13 +20,14 @@ def appStarted(app):
     app.drawables = []
 
     ## wall test
-    # app.drawables.append(createQuadPlane(20, 30))
-    # app.drawables[-1].translate(0, -4, -10)
+    app.drawables.extend(createDoorway(20, 30))
+    for i in range(len(app.drawables)-3, len(app.drawables)):
+        app.drawables[i].translate(-10, -4, -10)
 
     ## room test
-    app.drawables.extend(createRoom(50, 100, 10))
-    for i in range(len(app.drawables)-4, len(app.drawables)):
-        app.drawables[i].translate(-10, -4, -10)
+    # app.drawables.extend(createRoom(50, 100, 10))
+    # for i in range(len(app.drawables)-4, len(app.drawables)):
+        # app.drawables[i].translate(-10, -4, -10)
 
     ## model test
     # app.drawables.append(ply_importer.importPly("cone.ply"))

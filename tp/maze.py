@@ -2,9 +2,9 @@
 
 import random
 
-from enum import Enum
-
 from util import *
+
+from threedee import *
 
 class Node:
     def __init__(self, id):
@@ -22,23 +22,6 @@ class Node:
         self.id = newId
         for partner in self.partners:
             partner.convert(newId)
-
-
-class Direction(Enum):
-    NORTH = (0, -1)
-    EAST = (1, 0)
-    SOUTH = (0, 1)
-    WEST = (-1, 0)
-
-    def __invert__(self):
-        if self == Direction.NORTH:
-            return Direction.SOUTH
-        elif self == Direction.SOUTH:
-            return Direction.NORTH
-        elif self == Direction.WEST:
-            return Direction.EAST
-        elif self == Direction.EAST:
-            return Direction.WEST
 
 # http://weblog.jamisbuck.org/2011/1/3/maze-generation-kruskal-s-algorithm#
 def genMaze(rows, cols):
@@ -86,3 +69,6 @@ def genMaze(rows, cols):
     import numpy as np
 
     return graph
+
+def mazeTo3DEnvironment():
+    pass

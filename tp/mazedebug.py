@@ -9,8 +9,8 @@ def setCellSizes(app):
     app.marginHeight = app.cellHeight / 8
 
 def appStarted(app):
-    app.rows = 100
-    app.cols = 100
+    app.rows = 20
+    app.cols = 20
     app.maze = genMaze(app.rows, app.cols)
     setCellSizes(app)
 
