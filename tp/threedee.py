@@ -297,3 +297,10 @@ def paintersAlgorithm(polyAndColor):
 def normVec(vec: np.array):
     magnitude = math.sqrt(vec[0]**2+vec[1]**2+vec[2]**2)
     vec /= magnitude
+
+def meshListToMesh(meshList):
+    bigPolys = []
+    for mesh in meshList:
+        bigPolys.extend(mesh.polys)
+
+    return Mesh(bigPolys, meshList[0].hasNormals, meshList[0].isTwoSided)

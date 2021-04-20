@@ -20,14 +20,14 @@ def appStarted(app):
     app.drawables = []
 
     ## wall test
-    app.drawables.extend(createDoorway(20, 30))
-    for i in range(len(app.drawables)-3, len(app.drawables)):
-        app.drawables[i].translate(-10, -4, -10)
+    # app.drawables.extend(createDoorway(20, 30))
+    # for i in range(len(app.drawables)-3, len(app.drawables)):
+    #     app.drawables[i].translate(-10, -4, -10)
 
     ## room test
-    # app.drawables.extend(createRoom(50, 100, 10))
-    # for i in range(len(app.drawables)-4, len(app.drawables)):
-        # app.drawables[i].translate(-10, -4, -10)
+    app.drawables.extend(createRoom(50, 100, 20, Direction.WEST))
+    for i in range(len(app.drawables)-6, len(app.drawables)):
+        app.drawables[i].translate(-10, -4, -10)
 
     ## model test
     # app.drawables.append(ply_importer.importPly("cone.ply"))

@@ -1,36 +1,29 @@
 from threedee import *
 
-def createRoom(height, width, depth):
-    plane0 = createQuadPlane(depth, height)
-    plane1 = copy.deepcopy(plane0)
+# Returns 4 meshes without doorway, 6 meshes with
+def createRoom(height, width, depth, doorway = None):
+    plane0 = [createQuadPlane(depth, height)]
+    plane1 = [createQuadPlane(depth, height)]
+    plane2 = [createQuadPlane(depth, width)]
+    plane3 = [createQuadPlane(depth, width)]
+    if doorway == Direction.SOUTH:
+        plane0 = createDoorway(depth, height)
+    elif doorway == Direction.NORTH:
+        plane1 = createDoorway(depth, height)
+    elif doorway == Direction.EAST:
+        plane2 = createDoorway(depth, width)
+    elif doorway == Direction.WEST:
+        plane3 = createDoorway(depth, width)
 
-    for poly, norm in plane1.polys:
-        for vec in poly:
-            vec[2] += width
-        
-        for vec in norm:
-            vec *= -1
+    # Since doorway may be a list, all of these planes are stored as lists of meshes
+    list(map(lambda mesh: mesh.translate(0, 0, width), plane1))
 
-    plane2 = createQuadPlane(depth, width)
-    rot90 = getYRotationMatrix(90)
-    for poly, norm in plane2.polys:
-        np.matmul(poly, rot90, poly)
-        np.matmul(norm, rot90, norm)
-            
+    list(map(lambda mesh: mesh.rotateY(90), plane2))
+    list(map(lambda mesh: mesh.translate(height, 0, 0), plane2))
 
-    plane3 = copy.deepcopy(plane2)
+    list(map(lambda mesh: mesh.rotateY(90), plane3))
 
-    for poly, norm in plane2.polys:
-        for vec in poly:
-            vec[0] += height
-
-    for poly, norm in plane3.polys:
-        for vec in norm:
-            vec *= -1
-
-    planes = [plane0, plane1, plane2, plane3]
-    # after modifying polygons in place, recalculate hitboxes
-    [plane.calcCollisionParameters() for plane in planes]
+    planes = plane0 + plane1 + plane2 + plane3
 
     return planes
 
