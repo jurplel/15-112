@@ -1,19 +1,20 @@
 from threedee import *
 
-# Returns 4 meshes without doorway, 6 meshes with
-def createRoom(height, width, depth, doorway = None):
+# Returns 4 meshes without doorway, add 2 for each doorway
+def createRoom(height, width, depth, doorways = []):
     plane0 = [createQuadPlane(depth, height)]
     plane1 = [createQuadPlane(depth, height)]
     plane2 = [createQuadPlane(depth, width)]
     plane3 = [createQuadPlane(depth, width)]
-    if doorway == Direction.SOUTH:
-        plane0 = createDoorway(depth, height)
-    elif doorway == Direction.NORTH:
-        plane1 = createDoorway(depth, height)
-    elif doorway == Direction.EAST:
-        plane2 = createDoorway(depth, width)
-    elif doorway == Direction.WEST:
-        plane3 = createDoorway(depth, width)
+    for doorway in doorways:
+        if doorway == Direction.SOUTH:
+            plane0 = createDoorway(depth, height)
+        elif doorway == Direction.NORTH:
+            plane1 = createDoorway(depth, height)
+        elif doorway == Direction.EAST:
+            plane2 = createDoorway(depth, width)
+        elif doorway == Direction.WEST:
+            plane3 = createDoorway(depth, width)
 
     # Since doorway may be a list, all of these planes are stored as lists of meshes
     list(map(lambda mesh: mesh.translate(0, 0, width), plane1))

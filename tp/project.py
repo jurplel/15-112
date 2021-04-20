@@ -25,8 +25,8 @@ def appStarted(app):
     #     app.drawables[i].translate(-10, -4, -10)
 
     ## room test
-    app.drawables.extend(createRoom(50, 100, 20, Direction.WEST))
-    for i in range(len(app.drawables)-6, len(app.drawables)):
+    app.drawables.extend(createRoom(50, 100, 20, [Direction.SOUTH, Direction.NORTH]))
+    for i in range(len(app.drawables)-8, len(app.drawables)):
         app.drawables[i].translate(-10, -4, -10)
 
     ## model test
