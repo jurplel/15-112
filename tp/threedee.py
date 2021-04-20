@@ -11,10 +11,11 @@ import math, copy
 from util import *
 
 class Mesh:
-    def __init__(self, polys, hasNormals):
+    def __init__(self, polys, hasNormals, isTwoSided = False):
         self._polys = polys
         self.calcCollisionParameters()
         self.hasNormals = hasNormals
+        self.isTwoSided = isTwoSided
         self.translationMatrix = getTranslationMatrix(0, 0, 2)
         self.rotationMatrix = getRotationMatrix(0, 0, 0)
         self.transformMatrix = self.rotationMatrix @ self.translationMatrix
@@ -82,7 +83,7 @@ class Mesh:
             if self.hasNormals:
                 avgNormal = np.add.reduce(norms) / len(norms)
                 # Culling
-                if cull(avgNormal, poly, camPos):
+                if not self.isTwoSided and cull(avgNormal, poly, camPos):
                     continue
 
                 # Flat shading

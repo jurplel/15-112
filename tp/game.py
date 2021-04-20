@@ -63,4 +63,4 @@ def createQuadPlane(height, width):
         [0, height, 0, 1]
     ], dtype=np.float64)
     norm = np.tile(np.array([0, 0, 1, 0], dtype=np.float64), (3, 1))
-    return Mesh([(poly0, norm), (poly1, np.copy(norm))], True)
+    return Mesh([(poly0, norm), (poly1, np.copy(norm))], True, True)
