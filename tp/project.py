@@ -1,7 +1,7 @@
 # Some sources
 # https://www.scratchapixel.com/
-# https://www.youtube.com/watch?v=ih20l3pJoeU (No code copied, just used to push concepts along!)
-# https://en.wikipedia.org/wiki/Rotation_matrix
+
+
 # http://graphics.cs.cmu.edu/nsp/course/15-462/Spring04/slides/06-viewing.pdf
 
 from dataclasses import dataclass
@@ -34,6 +34,7 @@ def appStarted(app):
     app.fov = 90
 
     app.wireframe = False
+    app.drawFps = True
 
     setNewProjectionMatrix(app)
     setNewViewMatrix(app)
@@ -114,13 +115,15 @@ def redraw3D(app, canvas):
 
 
 def redrawAll(app, canvas):
-    startTime = time.time()
+    if app.drawFps:
+        startTime = time.time()
 
     # Draw all 3D meshes/polygons
     redraw3D(app, canvas)
 
     # fps counter
-    canvas.create_text(15, 15, text=int(1/(time.time()-startTime)), anchor="nw")
+    if app.drawFps:
+        canvas.create_text(15, 15, text=int(1/(time.time()-startTime)), anchor="nw")
 
 def main():
     width = 1280

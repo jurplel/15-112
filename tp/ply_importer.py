@@ -9,7 +9,6 @@ def readFile(path):
     with open(path, "rt") as f:
         return f.read()
 
-
 # Imports PLY 3d model files
 # Export from Blender in ASCII mode with everything but normals unchecked
 # http://learnwebgl.brown37.net/modelers/ply_data_format.html
