@@ -1,5 +1,5 @@
 # https://www.youtube.com/watch?v=ih20l3pJoeU
-# ^ This video was broadly followed and helped me to form the structure of the program
+# ^ This video was broadly followed and helped me to form the drawing loop and other foundational things
 # https://www.scratchapixel.com/ <-- Lots of stuff from there too
 
 from dataclasses import dataclass
@@ -228,7 +228,8 @@ def rotatePoly(rotationMatrix, poly: np.array, norms: np.array, hasNorms):
         np.matmul(norms, rotationMatrix, norms)
 
 # https://sites.google.com/site/3dprogramminginpython/
-# ^Math sorta from there but then I changed it a bit
+# ^Math sorta from there but then it didn't work and I had to intuitively figure it out anyway
+# I'm probably overciting with this one tbh but you should know I saw the website and it has python source code
 def toRasterSpace(poly: np.array, height, width):
     addOneMatrix = [1, 1, 0, 0]
     poly += addOneMatrix
@@ -243,36 +244,50 @@ def linePlaneIntersection(plane: np.array, planeNorm: np.array, P0, P1):
     P = P0 + rayDir*t
     return P
 
-# Concept from https://www.youtube.com/watch?v=HXSuNxpCzdM
+# Concept from https://youtu.be/HXSuNxpCzdM?t=2378
+# Returns tuple of format (isNewPolys, listOfNewPolys)
+# isNewPolys == None -> don't do anything
+# isNewPolys == False -> Delete entire polygon
+# isNewPolys == True -> add listOfNewPolys to draw queue
+# The current polygon is modified destructively, so there is no need to skip drawing
 def nearClipViewSpacePoly(poly: np.array, zNear = 1):
     newPolys = []
     clipped = []
+    # for each vector in this polygon, if its z coordinate is too close to the camera, mark it for clipping
     for i, vec in enumerate(poly):
         if vec[2] < zNear:
             clipped.append(i)
 
+    # This downwards is the concept taken from the video
     if len(clipped) == 0:
         return (None, None)
     elif len(clipped) == 3:
         return (False, None)
 
     notClipped = (set([0, 1, 2]) - set(clipped))
+
+    # If one vert is too close to camera, make a quad (with a new polygon in newPolys)
     if len(clipped) == 1:
         poly1 = poly[clipped[0]]
         poly2 = poly[notClipped.pop()]
         poly3 = poly[notClipped.pop()]
+
         intersection1 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], poly1[0:3], poly2[0:3])
         intersection2 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], poly1[0:3], poly3[0:3])
-        np.put(poly1, [0, 1, 2], intersection1)
+
+        np.put(poly1, [0, 1, 2], intersection1) # Replace 0, 1, and 2 indices
         newPolys.append(np.array([poly1, poly3, np.append(intersection2, 1)]))
+    # If two verts are too close to the camera, modify the current polygon
     elif len(clipped) == 2:
         poly1 = poly[clipped[0]]
         poly2 = poly[clipped[1]]
         poly3 = poly[notClipped.pop()]
+
         intersection1 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], poly1[0:3], poly3[0:3])
         intersection2 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], poly2[0:3], poly3[0:3])
-        np.put(poly1, [0, 1, 2], intersection1)
-        np.put(poly2, [0, 1, 2], intersection2)
+
+        np.put(poly1, [0, 1, 2], intersection1) # Replace 0, 1, and 2 indices
+        np.put(poly2, [0, 1, 2], intersection2) # Replace 0, 1, and 2 indices
 
     return (True, newPolys)
 

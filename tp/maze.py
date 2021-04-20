@@ -66,8 +66,6 @@ def genMaze(rows, cols):
         if len(uniques) == 1:
             break
 
-    import numpy as np
-
     return graph
 
 def mazeTo3DEnvironment():
