@@ -1,9 +1,3 @@
-# Some sources
-# https://www.scratchapixel.com/
-
-
-# http://graphics.cs.cmu.edu/nsp/course/15-462/Spring04/slides/06-viewing.pdf
-
 from dataclasses import dataclass
 
 from cmu_112_graphics import *
@@ -23,7 +17,19 @@ def setNewProjectionMatrix(app):
 
 def appStarted(app):
     app.drawables = []
-    app.drawables.append(createRoom(50, 100, 10))
+
+    ## wall test
+    # app.drawables.append(createQuadPlane(20, 30))
+    # app.drawables[-1].translate(0, -4, -10)
+
+    ## room test
+    app.drawables.extend(createRoom(50, 100, 10))
+    for i in range(len(app.drawables)-4, len(app.drawables)):
+        app.drawables[i].translate(-10, -4, -10)
+
+    ## model test
+    # app.drawables.append(ply_importer.importPly("cone.ply"))
+    # app.drawables[-1].translate(4, 0, 4)
     
     app.cam = np.array([0, 0, 0, 0], dtype=np.float64)
     app.camDir = np.array([0, 0, 1, 0], dtype=np.float64)
@@ -56,10 +62,21 @@ def keyReleased(app, event):
     key = event.key.lower()
     app.heldKeys.remove(key)
 
+def doesCamCollide(app):
+    for mesh in app.drawables:
+        collides = (mesh.minX-1 <= app.cam[0] <= mesh.maxX+1 and 
+                    mesh.minY-1 <= app.cam[1] <= mesh.maxY+1 and 
+                    mesh.minZ-1 <= app.cam[2] <= mesh.maxZ+1)
+        if collides:
+            return True
+
+    return False
+
 def timerFired(app):
     deltaTime = time.time() - app.lastTime
     speed = deltaTime * 10
     if app.heldKeys:
+        oldCam = copy.deepcopy(app.cam)
         # vertex additions
         if "w" in app.heldKeys:
             app.cam += app.camDir * speed
@@ -74,6 +91,9 @@ def timerFired(app):
         elif "d" in app.heldKeys:
             app.cam += sidewaysCamDir * speed
         
+        if doesCamCollide(app):
+            app.cam = oldCam
+
         angleStep = 15
         angleStep *= speed
 

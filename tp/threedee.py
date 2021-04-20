@@ -12,12 +12,65 @@ from util import *
 
 class Mesh:
     def __init__(self, polys, hasNormals):
-        self.polys = polys
+        self._polys = polys
+        self.calcCollisionParameters()
         self.hasNormals = hasNormals
-        self.translationMatrix = getTranslationMatrix(0, -4, 4)
-        self.rotationMatrix = getRotationMatrix(0, 160, 0)
+        self.translationMatrix = getTranslationMatrix(0, 0, 2)
+        self.rotationMatrix = getRotationMatrix(0, 0, 0)
         self.transformMatrix = self.rotationMatrix @ self.translationMatrix
         self.color = Color(0, 162, 255)
+
+    @property
+    def polys(self):
+        return self._polys
+
+    @polys.setter
+    def polys(self, new_value):
+        self._polys = new_value
+        self.calcCollisionParameters()
+
+    def calcCollisionParameters(self):
+        allX = []
+        allY = []
+        allZ = []
+        for poly, _norm in self._polys:
+            allX.extend(poly[:,0])
+            allY.extend(poly[:,1])
+            allZ.extend(poly[:,2])
+
+        self.maxX = max(allX)
+        self.minX = min(allX)
+        self.maxY = max(allY)
+        self.minY = min(allY)
+        self.maxZ = max(allZ)
+        self.minZ = min(allZ)
+
+    def translate(self, x, y, z):
+        translationMatrix = getTranslationMatrix(x, y, z)
+        for poly, _norm in self.polys:
+            np.matmul(poly, translationMatrix, poly)
+        self.calcCollisionParameters()
+
+    def rotateX(self, degX):
+        rotationMatrix = getXRotationMatrix(degX)
+        for poly, norm in self.polys:
+            np.matmul(poly, rotationMatrix, poly)
+            np.matmul(norm, rotationMatrix, norm)
+        self.calcCollisionParameters()
+
+    def rotateY(self, degY):
+        rotationMatrix = getYRotationMatrix(degY)
+        for poly, norm in self.polys:
+            np.matmul(poly, rotationMatrix, poly)
+            np.matmul(norm, rotationMatrix, norm)
+        self.calcCollisionParameters()
+
+    def rotateZ(self, degZ):
+        rotationMatrix = getZRotationMatrix(degZ)
+        for poly, norm in self.polys:
+            np.matmul(poly, rotationMatrix, poly)
+            np.matmul(norm, rotationMatrix, norm)
+        self.calcCollisionParameters()
 
     # Returns list of "processed" polys (Ready for drawing)
     # order mostly from https://www.youtube.com/watch?v=ih20l3pJoeU
@@ -25,10 +78,6 @@ class Mesh:
         newPolys = copy.deepcopy(self.polys)
         readyPolys = []
         for poly, norms in newPolys:
-            # To world space
-            np.matmul(poly, self.transformMatrix, poly)
-            np.matmul(norms, self.rotationMatrix, norms)
-
             lightedColor = None
             if self.hasNormals:
                 avgNormal = np.add.reduce(norms) / len(norms)
@@ -226,7 +275,7 @@ def nearClipViewSpacePoly(poly: np.array, zNear = 1):
 
     return (True, newPolys)
 
-# https://www.youtube.com/watch?v=XgMWc6LumG4&t=2068s
+# https://www.youtube.com/watch?v=XgMWc6LumG4
 def cull(avgNormal, poly, camPos):
     camRay = poly[0] - camPos
     camDiff = np.dot(avgNormal, camRay)
@@ -234,14 +283,14 @@ def cull(avgNormal, poly, camPos):
         return True
     return False
 
-# https://www.youtube.com/watch?v=XgMWc6LumG4&t=2068s
+# https://www.youtube.com/watch?v=XgMWc6LumG4
 def flatLightingFactor(avgNormal, lightVector):
     return max(0.25, np.dot(avgNormal, lightVector))
 
-# https://www.youtube.com/watch?v=XgMWc6LumG4&t=2068s
+# https://www.youtube.com/watch?v=XgMWc6LumG4
 def paintersAlgorithm(polyAndColor):
     poly = polyAndColor[0]
-    return -sum(vector[2] for vector in poly)/3
+    return sum(vector[2] for vector in poly)/3
 
 # Used instead of built in np.linalg.norm for performance reasons
 def normVec(vec: np.array):
@@ -249,35 +298,38 @@ def normVec(vec: np.array):
     vec /= magnitude
 
 def createRoom(height, width, depth):
-    plane0 = createQuadPlane(depth, height).polys
+    plane0 = createQuadPlane(depth, height)
     plane1 = copy.deepcopy(plane0)
 
-    for poly, norm in plane1:
+    for poly, norm in plane1.polys:
         for vec in poly:
             vec[2] += width
         
         for vec in norm:
             vec *= -1
 
-    plane2 = createQuadPlane(depth, width).polys
+    plane2 = createQuadPlane(depth, width)
     rot90 = getYRotationMatrix(90)
-    for poly, norm in plane2:
+    for poly, norm in plane2.polys:
         np.matmul(poly, rot90, poly)
         np.matmul(norm, rot90, norm)
             
 
     plane3 = copy.deepcopy(plane2)
 
-    for poly, norm in plane2:
+    for poly, norm in plane2.polys:
         for vec in poly:
             vec[0] += height
 
-    for poly, norm in plane3:
+    for poly, norm in plane3.polys:
         for vec in norm:
             vec *= -1
 
-    polys = plane0 + plane1 + plane2 + plane3
-    return Mesh(polys, True)
+    planes = [plane0, plane1, plane2, plane3]
+    # after modifying polygons in place, recalculate hitboxes
+    [plane.calcCollisionParameters() for plane in planes]
+
+    return planes
 
 
 def createQuadPlane(height, width):
