@@ -29,7 +29,12 @@ def appStarted(app):
         # app.drawables[i].translate(-10, -4, -10)
 
     ## maze test
-    app.drawables.extend(createMaze(3, 3, 50, 100, 20))
+    app.mazeRows = app.mazeCols = 3
+    app.roomHeight = 50
+    app.roomWidth = 100
+    app.roomDepth = 20
+    app.maze, meshes = createMaze(3, 3, 50, 100, 20)
+    app.drawables.extend(meshes)
     for i in range(0, len(app.drawables)):
         app.drawables[i].translate(-10, -4, -10)
 

@@ -7,11 +7,10 @@ def createMaze(rows, cols, roomHeight, roomWidth, roomDepth):
     for row in range(rows):
         for col in range(cols):
             room = createRoom(roomHeight, roomWidth, roomDepth, maze[row][col].dirs)
-            print(roomHeight*row, roomWidth*col, row, col, maze[row][col].dirs)
             list(map(lambda mesh: mesh.translate(roomHeight*row, 0, roomWidth*col), room))
             meshes.extend(room)
 
-    return meshes
+    return maze, meshes
 
 # Returns 4 meshes without doorway, add 2 for each doorway
 def createRoom(height, width, depth, doorways = []):
