@@ -16,9 +16,6 @@ class Mesh:
         self.calcCollisionParameters()
         self.hasNormals = hasNormals
         self.isTwoSided = isTwoSided
-        self.translationMatrix = getTranslationMatrix(0, 0, 2)
-        self.rotationMatrix = getRotationMatrix(0, 0, 0)
-        self.transformMatrix = self.rotationMatrix @ self.translationMatrix
         self.color = Color(0, 162, 255)
 
     @property

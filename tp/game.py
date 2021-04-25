@@ -1,4 +1,17 @@
 from threedee import *
+from maze import genMaze
+
+def createMaze(rows, cols, roomHeight, roomWidth, roomDepth):
+    maze = genMaze(rows, cols)
+    meshes = []
+    for row in range(rows):
+        for col in range(cols):
+            room = createRoom(roomHeight, roomWidth, roomDepth, maze[row][col].dirs)
+            print(roomHeight*row, roomWidth*col, row, col, maze[row][col].dirs)
+            list(map(lambda mesh: mesh.translate(roomHeight*row, 0, roomWidth*col), room))
+            meshes.extend(room)
+
+    return meshes
 
 # Returns 4 meshes without doorway, add 2 for each doorway
 def createRoom(height, width, depth, doorways = []):
@@ -7,13 +20,13 @@ def createRoom(height, width, depth, doorways = []):
     plane2 = [createQuadPlane(depth, width)]
     plane3 = [createQuadPlane(depth, width)]
     for doorway in doorways:
-        if doorway == Direction.SOUTH:
+        if doorway == Direction.WEST:
             plane0 = createDoorway(depth, height)
-        elif doorway == Direction.NORTH:
-            plane1 = createDoorway(depth, height)
         elif doorway == Direction.EAST:
+            plane1 = createDoorway(depth, height)
+        elif doorway == Direction.SOUTH:
             plane2 = createDoorway(depth, width)
-        elif doorway == Direction.WEST:
+        elif doorway == Direction.NORTH:
             plane3 = createDoorway(depth, width)
 
     # Since doorway may be a list, all of these planes are stored as lists of meshes
