@@ -118,7 +118,7 @@ class Mesh:
 # https://www.youtube.com/watch?v=ih20l3pJoeU
 def getProjectionMatrix(height, width, fov = 90):
     far = 100 # Constants i guess idk
-    near = 1
+    near = 2
     diff = far-near
     fov = math.radians(fov)
     fovCalculation = 1/math.tan(fov/2)
@@ -250,12 +250,12 @@ def linePlaneIntersection(plane: np.array, planeNorm: np.array, P0, P1):
 # isNewPolys == False -> Delete entire polygon
 # isNewPolys == True -> add listOfNewPolys to draw queue
 # The current polygon is modified destructively, so there is no need to skip drawing
-def nearClipViewSpacePoly(poly: np.array, zNear = 1):
+def nearClipViewSpacePoly(poly: np.array, zNear = 2):
     newPolys = []
     clipped = []
     # for each vector in this polygon, if its z coordinate is too close to the camera, mark it for clipping
     for i, vec in enumerate(poly):
-        if vec[2] < zNear:
+        if vec[2] <= zNear:
             clipped.append(i)
 
     # This downwards is the concept taken from the video
@@ -268,26 +268,26 @@ def nearClipViewSpacePoly(poly: np.array, zNear = 1):
 
     # If one vert is too close to camera, make a quad (with a new polygon in newPolys)
     if len(clipped) == 1:
-        poly1 = poly[clipped[0]]
-        poly2 = poly[notClipped.pop()]
-        poly3 = poly[notClipped.pop()]
+        vec0 = poly[clipped[0]]
+        vec1 = poly[notClipped.pop()]
+        vec2 = poly[notClipped.pop()]
 
-        intersection1 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], poly1[0:3], poly2[0:3])
-        intersection2 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], poly1[0:3], poly3[0:3])
+        intersection1 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], vec0[0:3], vec1[0:3])
+        intersection2 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], vec0[0:3], vec2[0:3])
 
-        np.put(poly1, [0, 1, 2], intersection1) # Replace 0, 1, and 2 indices
-        newPolys.append(np.array([poly1, poly3, np.append(intersection2, 1)]))
+        np.put(vec0, [0, 1, 2], intersection1) # Replace 0, 1, and 2 indices
+        newPolys.append(np.array([vec0, vec2, np.append(intersection2, 1)]))
     # If two verts are too close to the camera, modify the current polygon
     elif len(clipped) == 2:
-        poly1 = poly[clipped[0]]
-        poly2 = poly[clipped[1]]
-        poly3 = poly[notClipped.pop()]
+        vec0 = poly[clipped[0]]
+        vec1 = poly[clipped[1]]
+        vec2 = poly[notClipped.pop()]
 
-        intersection1 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], poly1[0:3], poly3[0:3])
-        intersection2 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], poly2[0:3], poly3[0:3])
+        intersection1 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], vec0[0:3], vec2[0:3])
+        intersection2 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], vec1[0:3], vec2[0:3])
 
-        np.put(poly1, [0, 1, 2], intersection1) # Replace 0, 1, and 2 indices
-        np.put(poly2, [0, 1, 2], intersection2) # Replace 0, 1, and 2 indices
+        np.put(vec0, [0, 1, 2], intersection1) # Replace 0, 1, and 2 indices
+        np.put(vec1, [0, 1, 2], intersection2) # Replace 0, 1, and 2 indices
 
     return (True, newPolys)
 
