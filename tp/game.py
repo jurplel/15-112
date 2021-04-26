@@ -1,72 +1,150 @@
-from threedee import *
-from maze import genMaze
+import numpy as np
+import math, time
 
-def createMaze(rows, cols, roomHeight, roomWidth, roomDepth):
-    maze = genMaze(rows, cols)
-    meshes = []
-    for row in range(rows):
-        for col in range(cols):
-            room = createRoom(roomHeight, roomWidth, roomDepth, maze[row][col].dirs)
-            list(map(lambda mesh: mesh.translate(roomHeight*row, 0, roomWidth*col), room))
-            meshes.extend(room)
+import ply_importer
 
-    return maze, meshes
+from dddgame import *
 
-# Returns 4 meshes without doorway, add 2 for each doorway
-def createRoom(height, width, depth, doorways = []):
-    plane0 = [createQuadPlane(depth, height)]
-    plane1 = [createQuadPlane(depth, height)]
-    plane2 = [createQuadPlane(depth, width)]
-    plane3 = [createQuadPlane(depth, width)]
-    for doorway in doorways:
-        if doorway == Direction.WEST:
-            plane0 = createDoorway(depth, height)
-        elif doorway == Direction.EAST:
-            plane1 = createDoorway(depth, height)
-        elif doorway == Direction.SOUTH:
-            plane2 = createDoorway(depth, width)
-        elif doorway == Direction.NORTH:
-            plane3 = createDoorway(depth, width)
+def setNewViewMatrix(app):
+    app.viewMatrix = getViewMatrix(app.cam, app.cam + app.camDir)
 
-    # Since doorway may be a list, all of these planes are stored as lists of meshes
-    list(map(lambda mesh: mesh.translate(0, 0, width), plane1))
+def setNewProjectionMatrix(app):
+    app.projectionMatrix = getProjectionMatrix(app.height, app.width, app.fov)
 
-    list(map(lambda mesh: mesh.rotateY(90), plane2))
-    list(map(lambda mesh: mesh.translate(height, 0, 0), plane2))
+def startGame(app):
+    app.drawables = []
 
-    list(map(lambda mesh: mesh.rotateY(90), plane3))
+    ## wall test
+    # app.drawables.append(createQuadPlane(20, 100))
+    # app.drawables[-1].translate(-10, -4, -10)
 
-    planes = plane0 + plane1 + plane2 + plane3
+    ## room test
+    # app.drawables.extend(createRoom(50, 100, 20, [Direction.SOUTH, Direction.NORTH]))
+    # for i in range(len(app.drawables)-8, len(app.drawables)):
+        # app.drawables[i].translate(-10, -4, -10)
 
-    return planes
+    ## maze test
+    app.mazeRows = app.mazeCols = 3
+    app.roomHeight = 50
+    app.roomWidth = 100
+    app.roomDepth = 20
+    app.maze, meshes = createMaze(3, 3, 50, 100, 20)
+    app.drawables.extend(meshes)
+    for i in range(0, len(app.drawables)):
+        app.drawables[i].translate(-10, -4, -10)
 
-def createDoorway(height, width):
-    doorHeight = min(12, height)
-    doorWidth = min(8, width)
+    ## model test
+    # app.drawables.append(ply_importer.importPly("cone.ply"))
+    # app.drawables[-1].translate(4, 0, 4)
+    
+    app.cam = np.array([0, 0, 0, 0], dtype=np.float64)
+    app.camDir = np.array([0, 0, 1, 0], dtype=np.float64)
+    app.yaw = 0
+
+    app.light = np.array([0, 0, -1, 0])
+
+    app.fov = 90
+
+    app.wireframe = False
+    app.drawFps = True
+
+    setNewProjectionMatrix(app)
+    setNewViewMatrix(app)
+
+    targetFps = 144
+    app.timerDelay = 1500//targetFps
+    app.started = time.time()
+    app.lastTime = time.time()
+    app.heldKeys = set()
+
+def game_sizeChanged(app):
+    setNewProjectionMatrix(app)
+
+def doesCamCollide(app):
+    for mesh in app.drawables:
+        collides = (mesh.minX-1 <= app.cam[0] <= mesh.maxX+1 and 
+                    mesh.minY-1 <= app.cam[1] <= mesh.maxY+1 and 
+                    mesh.minZ-1 <= app.cam[2] <= mesh.maxZ+1)
+        if collides:
+            return True
+
+    return False
+
+def game_keyPressed(app, event):
+    key = event.key.lower()
+    app.heldKeys.add(key)
+
+def game_keyReleased(app, event):
+    key = event.key.lower()
+    app.heldKeys.remove(key)
+
+def game_timerFired(app):
+    deltaTime = time.time() - app.lastTime
+    speed = 15
+    speed *= deltaTime
+    if app.heldKeys:
+        oldCam = copy.deepcopy(app.cam)
+        # vertex additions
+        if "w" in app.heldKeys:
+            app.cam += app.camDir * speed
+        elif "s" in app.heldKeys:
+            app.cam -= app.camDir * speed
+
+        sidewaysRotationMatrix = getRotationMatrix(0, 90, 0)
+        sidewaysCamDir = sidewaysRotationMatrix @ app.camDir
+
+        if "a" in app.heldKeys:
+            app.cam -= sidewaysCamDir * speed
+        elif "d" in app.heldKeys:
+            app.cam += sidewaysCamDir * speed
+        
+        if doesCamCollide(app):
+            app.cam = oldCam
+
+        angleStep = 15
+        angleStep *= speed
+
+        # rotations        
+        if "left" in app.heldKeys:
+            app.yaw += angleStep
+        elif "right" in app.heldKeys:
+            app.yaw -= angleStep
+
+        app.camDir = np.array([0, 0, 1, 0]) @ getYRotationMatrix(app.yaw)
+        setNewViewMatrix(app)
+
+    app.lastTime = time.time()
+
+def drawPolygon(app, canvas, polygon, color):
+    v0 = polygon[0]
+    v1 = polygon[1]
+    v2 = polygon[2]
+
+    outlineColor = "black" if app.wireframe else color
+    canvas.create_polygon(v0[0], v0[1], v1[0], v1[1], v2[0], v2[1], 
+                        outline=outlineColor, fill=color)
+
+def redraw3D(app, canvas):
+    readyPolys = []
+    for mesh in app.drawables:
+        readyPolys.extend(mesh.process(app.cam, app.light,
+                                       app.height, app.width,
+                                       app.projectionMatrix, app.viewMatrix))
 
 
-    plane0 = createQuadPlane(height, (width-doorWidth)/2)
-    plane1 = copy.deepcopy(plane0)
-    plane1.translate((width+doorWidth)/2, 0, 0)
-    plane2 = createQuadPlane(height-doorHeight, doorWidth)
-    plane2.translate((width-doorWidth)/2, doorHeight, 0)
+    # Draw in order with painter's algorithm
+    readyPolys.sort(key=paintersAlgorithm)
 
-    planes = [plane0, plane1, plane2]
-    # after modifying polygons in place, recalculate hitboxes
-    [plane.calcCollisionParameters() for plane in planes]
+    # List comprehensions are potentially faster than for loops
+    [drawPolygon(app, canvas, x[0], x[1]) for x in readyPolys]
 
-    return planes
+def game_redrawAll(app, canvas):
+    if app.drawFps:
+        startTime = time.time()
 
-def createQuadPlane(height, width):
-    poly0 = np.array([
-        [0, height, 0, 1],
-        [width, height, 0, 1],
-        [width, 0, 0, 1]
-    ], dtype=np.float64)
-    poly1 = np.array([
-        [width, 0, 0, 1],
-        [0, 0, 0, 1],
-        [0, height, 0, 1]
-    ], dtype=np.float64)
-    norm = np.tile(np.array([0, 0, 1, 0], dtype=np.float64), (3, 1))
-    return Mesh([(poly0, norm), (poly1, np.copy(norm))], True, True)
+    # Draw all 3D meshes/polygons
+    redraw3D(app, canvas)
+
+    # fps counter
+    if app.drawFps:
+        canvas.create_text(15, 15, text=int(1/(time.time()-startTime)), anchor="nw")

@@ -4,8 +4,6 @@ import random
 
 from util import *
 
-from threedee import *
-
 class Node:
     def __init__(self, id):
         self.id = id

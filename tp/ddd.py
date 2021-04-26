@@ -2,9 +2,6 @@
 # ^ This video was broadly followed and helped me to form the drawing loop and other foundational things
 # https://www.scratchapixel.com/ <-- Lots of stuff from there too
 
-from dataclasses import dataclass
-from enum import Enum
-
 import numpy as np
 import math, copy
 

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from threedee import Mesh
+from ddd import Mesh
 
 # From here: https://www.cs.cmu.edu/~112/notes/notes-strings.html#basicFileIO
 def readFile(path):
