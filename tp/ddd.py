@@ -303,6 +303,12 @@ def paintersAlgorithm(polyAndColor):
     poly = polyAndColor[0]
     return sum(vector[2] for vector in poly)/3
 
+# Version of the above that sorts by the closest values instead of midpoints. 
+# Maybe not the best overall but seems better for this game.
+def paintersAlgorithmMin(polyAndColor):
+    poly = polyAndColor[0]
+    return min(poly[:,2])
+
 # Used instead of built in np.linalg.norm for performance reasons
 def normVec(vec: np.array):
     magnitude = math.sqrt(vec[0]**2+vec[1]**2+vec[2]**2)
