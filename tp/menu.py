@@ -20,7 +20,7 @@ def startMenu(app):
 
 def menu_sizeChanged(app):
     resetSizeVars(app)
-    app.fovTextBox.place(x=app.width/2, y=app.height/2)
+    # app.fovTextBox.place(x=app.width/2, y=app.height/2)
 
 def menu_mouseMoved(app, event):
     app.highlightedMenuItem = None
