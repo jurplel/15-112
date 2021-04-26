@@ -34,9 +34,9 @@ def startGame(app):
         app.drawables[i].translate(-10, -4, -10)
 
     ## model test
-    app.drawables.append(ply_importer.importPly("res/cube.ply"))
+    app.drawables.append(ply_importer.importPly("res/char.ply"))
     app.drawables[-1].color = Color(214, 124, 13)
-    app.drawables[-1].translate(4, 0, 4)
+    app.drawables[-1].translate(4, -4, 4)
     
     app.cam = np.array([0, 0, 0, 0], dtype=np.float64)
     app.camDir = np.array([0, 0, 1, 0], dtype=np.float64)
