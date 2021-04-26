@@ -7,6 +7,10 @@ def make2dList(rows, cols, val = None):
 def clamp(x, low, high):
     return max(low, min(x, high))
 
+# for use with lambdas, where you can't assign anything
+def modifyDict(d: dict, key, value):
+    d[key] = value
+
 # https://www.cs.cmu.edu/~112/notes/notes-graphics.html#customColors
 def rgbToHex(r, g, b):
     r = clamp(int(r), 0, 255)

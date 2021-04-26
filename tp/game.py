@@ -13,6 +13,7 @@ def setNewProjectionMatrix(app):
 
 def startGame(app):
     app.drawables = []
+    app.characters = []
     
     ## maze test
     app.mazeRows = app.mazeCols = 3
@@ -24,12 +25,12 @@ def startGame(app):
     app.drawables.extend(meshes)
     for i in range(0, len(app.drawables)):
         app.drawables[i].translate(app.mazeTransform[0], app.mazeTransform[1], app.mazeTransform[2])
-
-    ## model test
-    app.drawables.append(ply_importer.importPly("res/char.ply"))
-    app.drawables[-1].color = Color(214, 124, 13)
-    app.drawables[-1].translate(4, -3, 4)
     
+    ## character test
+    app.characters.append(Character(ply_importer.importPly("res/char.ply")))
+    app.drawables.append(app.characters[-1].mesh)
+    app.drawables[-1].translate(4, -3, 4)
+
     # initialize player/cam coordinates
     app.cam = np.array([0, 0, 0, 0], dtype=np.float64)
     app.camDir = np.array([0, 0, 1, 0], dtype=np.float64)
@@ -82,9 +83,10 @@ def setCurrentRoom(app):
     col = int((app.cam[2] - app.mazeTransform[2]) / app.roomWidth)
     app.currentRoom = row, col
     for mesh in app.drawables:
-        if app.currentRoom != None and mesh.data != []:  
-            isCurrentOrAdjacentRoom = (abs(mesh.data[0].row - app.currentRoom[0]) <= 1 
-                                        and abs(mesh.data[0].col - app.currentRoom[1]) <= 1)
+        if app.currentRoom != None and mesh.data.get("mazeinfo", None) != None:  
+            meshMazeInfo = mesh.data["mazeinfo"]
+            isCurrentOrAdjacentRoom = (abs(meshMazeInfo.row - app.currentRoom[0]) <= 1 
+                                        and abs(meshMazeInfo.col - app.currentRoom[1]) <= 1)
             mesh.visible = isCurrentOrAdjacentRoom
 
 def game_keyPressed(app, event):
@@ -117,7 +119,8 @@ def recalculateCamDir(app):
     setNewViewMatrix(app)
 
 def fireGun(app):
-    pass
+    for mesh in app.drawables:
+        pass
 
 def processKeys(app, deltaTime):
     speed = app.movementSpeed*deltaTime
@@ -210,7 +213,7 @@ def redraw3D(app, canvas):
 
 
     # Draw in order with painter's algorithm
-    readyPolys.sort(key=paintersAlgorithmMin)
+    readyPolys.sort(key=paintersAlgorithmSmart)
 
     # List comprehensions are potentially faster than for loops
     [drawPolygon(app, canvas, x[0], x[1]) for x in readyPolys]

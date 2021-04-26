@@ -3,6 +3,14 @@ from dataclasses import dataclass
 from ddd import *
 from maze import genMaze
 
+class Character:
+    def __init__(self, mesh: Mesh):
+        mesh.data["character"] = True
+        # this is just the color of all characters at the moment
+        mesh.color = Color(214, 124, 13)
+        self.mesh = mesh
+
+
 @dataclass
 class MazeInfo:
     row: int
@@ -17,7 +25,7 @@ def createMaze(rows, cols, roomHeight, roomWidth, roomDepth):
             room = createRoom(roomHeight, roomWidth, roomDepth, maze[row][col].dirs)
             mazeInfo = MazeInfo(row, col, maze[row][col].dirs)
             list(map(lambda mesh: mesh.translate(roomHeight*row, 0, roomWidth*col), room))
-            list(map(lambda mesh: mesh.data.append(mazeInfo), room))
+            list(map(lambda mesh: modifyDict(mesh.data, "mazeinfo", mazeInfo), room))
             meshes.extend(room)
 
     return maze, meshes

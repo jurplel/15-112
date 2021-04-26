@@ -15,7 +15,7 @@ class Mesh:
         self.isTwoSided = isTwoSided
         self.color = Color(0, 162, 255)
         self.visible = True
-        self.data = []
+        self.data = dict()
 
     @property
     def polys(self):
@@ -312,6 +312,28 @@ def paintersAlgorithm(polyAndColor):
 def paintersAlgorithmMin(polyAndColor):
     poly = polyAndColor[0]
     return min(poly[:,2])
+
+# Note: Might be a misnomer.
+# Uses the other two painters algorithms based on the size of the largest line in the polygon
+# If it is above an arbitrary value, it will use the hacky algorithm, otherwise, the proper one can be used
+# Depth buffer is the proper solution but tkinter is WAY too slow for that
+def paintersAlgorithmSmart(polyAndColor):
+    poly = polyAndColor[0]
+    maxDist = max([vectorDiff(poly[i], poly[i-1])-1 for i in range(1, len(poly))])
+    arbitraryTunedValue = 500
+    if maxDist > arbitraryTunedValue:
+        return paintersAlgorithmMin(polyAndColor)
+    else:
+        return paintersAlgorithm(polyAndColor)
+
+def vectorDiff(vec0: np.array, vec1: np.array):
+    subbed = vec1-vec0
+    total = 0
+    for term in subbed:
+        total += term**2
+    
+    return math.sqrt(total)
+
 
 # Used instead of built in np.linalg.norm for performance reasons
 def normVec(vec: np.array):
