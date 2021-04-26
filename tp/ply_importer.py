@@ -10,7 +10,8 @@ def readFile(path):
         return f.read()
 
 # Imports PLY 3d model files
-# Export from Blender in ASCII mode with everything but normals unchecked
+# Works with exports from Blender in ASCII mode
+# Model must be split into triangles (Modeling tab, edit mode, press A to select all, Ctrl+T to triangulate)
 # http://learnwebgl.brown37.net/modelers/ply_data_format.html
 
 @dataclass
@@ -18,6 +19,7 @@ class HeaderInfo:
     vertexCount: int = -1
     faceCount: int = -1
     hasNormals: bool = False
+    hasUV: bool = False
     endIndex: int = -1
 
 # Returns HeaderInfo dataclass
@@ -33,6 +35,8 @@ def readHeader(fileAsString):
             headerInfo.faceCount = int(line.split()[-1])
         elif line.startswith("property float n"):
             headerInfo.hasNormals = True
+        elif line.startswith("property float s") or line.startswith("propertly float u"):
+            headerInfo.hasUV = True
         elif line == "end_header":
             headerInfo.endIndex = i
             return headerInfo
@@ -52,10 +56,10 @@ def readBody(headerInfo, fileAsString):
         line = lines[lineNum]
         points = np.array([ float(word) for word in line.split()])
         points = np.insert(points, 3, 1)
-        points = np.append(points, 0) # 0 for normal's w
 
         vertices.append(points[0:4])
         if headerInfo.hasNormals:
+            points = np.insert(points, 7, 0) # 0 for normal's w
             normals.append(points[4:8])
 
     for lineNum in range(facesStart, len(lines)):

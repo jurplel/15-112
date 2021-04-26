@@ -34,7 +34,7 @@ def startGame(app):
         app.drawables[i].translate(-10, -4, -10)
 
     ## model test
-    # app.drawables.append(ply_importer.importPly("cone.ply"))
+    # app.drawables.append(ply_importer.importPly("res/cube.ply"))
     # app.drawables[-1].translate(4, 0, 4)
     
     app.cam = np.array([0, 0, 0, 0], dtype=np.float64)
@@ -114,6 +114,38 @@ def game_timerFired(app):
         setNewViewMatrix(app)
 
     app.lastTime = time.time()
+
+## Remains of an attempt at texturing/depth-buffering--ended up with <1fps
+# def drawPolygonOnImage(app, polygon, color):
+#     # sort by y values, higher on screen/lower value first
+#     polygon = polygon[np.argsort(polygon[:,1])]
+
+#     x, y = int(polygon[0][0]), int(polygon[0][1])
+#     xa = xb = x
+
+#     if polygon[0][0] == polygon[1][0]:
+#         dxa = 0
+#     else:
+#         dxa = (polygon[0][1]-polygon[1][1])/(polygon[0][0]-polygon[1][0])
+
+#     if polygon[0][0] == polygon[2][0]:
+#         dxb = 0
+#     else:
+#         dxb = (polygon[0][1]-polygon[2][1])/(polygon[0][0]-polygon[2][0])
+
+#     dxa = int(dxa)
+#     dxb = int(dxb)
+
+#     if polygon[0][1] != polygon[1][1]:
+
+#         for iy in range(int(polygon[1][1])):
+#             xa += dxa
+#             xb += dxb
+
+#             for ix in range(xa, xb):
+#                 app.canvasImage.put(color, (ix, iy))
+
+
 
 def drawPolygon(app, canvas, polygon, color):
     v0 = polygon[0]

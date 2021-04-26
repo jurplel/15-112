@@ -244,7 +244,8 @@ def linePlaneIntersection(plane: np.array, planeNorm: np.array, P0, P1):
 # isNewPolys == False -> Delete entire polygon
 # isNewPolys == True -> add listOfNewPolys to draw queue
 # The current polygon is modified destructively, so there is no need to skip drawing
-def nearClipViewSpacePoly(poly: np.array, zNear = 2):
+def nearClipViewSpacePoly(poly: np.array, zNear = 2): 
+    # znear should probably be like 0.1 so it doesn't clip walls too near to the player, but that would require proper clipping on all planes
     newPolys = []
     clipped = []
     # for each vector in this polygon, if its z coordinate is too close to the camera, mark it for clipping
