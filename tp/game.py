@@ -13,30 +13,22 @@ def setNewProjectionMatrix(app):
 
 def startGame(app):
     app.drawables = []
-
-    ## wall test
-    # app.drawables.append(createQuadPlane(20, 100))
-    # app.drawables[-1].translate(-10, -4, -10)
-
-    ## room test
-    # app.drawables.extend(createRoom(50, 100, 20, [Direction.SOUTH, Direction.NORTH]))
-    # for i in range(len(app.drawables)-8, len(app.drawables)):
-        # app.drawables[i].translate(-10, -4, -10)
-
+    
     ## maze test
     app.mazeRows = app.mazeCols = 3
     app.roomHeight = 50
     app.roomWidth = 100
     app.roomDepth = 20
     app.maze, meshes = createMaze(3, 3, 50, 100, 20)
+    app.mazeTransform = np.array([-10, -4, -10])
     app.drawables.extend(meshes)
     for i in range(0, len(app.drawables)):
-        app.drawables[i].translate(-10, -4, -10)
+        app.drawables[i].translate(app.mazeTransform[0], app.mazeTransform[1], app.mazeTransform[2])
 
     ## model test
     app.drawables.append(ply_importer.importPly("res/char.ply"))
     app.drawables[-1].color = Color(214, 124, 13)
-    app.drawables[-1].translate(4, -4, 4)
+    app.drawables[-1].translate(4, -3, 4)
     
     app.cam = np.array([0, 0, 0, 0], dtype=np.float64)
     app.camDir = np.array([0, 0, 1, 0], dtype=np.float64)
@@ -57,6 +49,8 @@ def startGame(app):
     app.started = time.time()
     app.lastTime = time.time()
     app.heldKeys = set()
+    
+    app.currentRoom = getCurrentRoom(app)
 
 def game_sizeChanged(app):
     setNewProjectionMatrix(app)
@@ -70,6 +64,11 @@ def doesCamCollide(app):
             return True
 
     return False
+
+def getCurrentRoom(app):
+    row = int((app.cam[0] - app.mazeTransform[0]) / app.roomHeight)
+    col = int((app.cam[2] - app.mazeTransform[2]) / app.roomWidth)
+    return row, col
 
 def game_keyPressed(app, event):
     key = event.key.lower()
@@ -113,6 +112,7 @@ def game_timerFired(app):
 
         app.camDir = np.array([0, 0, 1, 0]) @ getYRotationMatrix(app.yaw)
         setNewViewMatrix(app)
+        app.currentRoom = getCurrentRoom(app)
 
     app.lastTime = time.time()
 
@@ -160,9 +160,14 @@ def drawPolygon(app, canvas, polygon, color):
 def redraw3D(app, canvas):
     readyPolys = []
     for mesh in app.drawables:
+        if app.currentRoom != None and mesh.data != []:  
+            isCurrentOrAdjacentRoom = (abs(mesh.data[0].row - app.currentRoom[0]) <= 1 
+                                      and abs(mesh.data[0].col - app.currentRoom[1]) <= 1)
+            mesh.visible = isCurrentOrAdjacentRoom
+
         readyPolys.extend(mesh.process(app.cam, app.light,
-                                       app.height, app.width,
-                                       app.projectionMatrix, app.viewMatrix))
+                                        app.height, app.width,
+                                        app.projectionMatrix, app.viewMatrix))
 
 
     # Draw in order with painter's algorithm

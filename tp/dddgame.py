@@ -1,5 +1,13 @@
+from dataclasses import dataclass
+
 from ddd import *
 from maze import genMaze
+
+@dataclass
+class MazeInfo:
+    row: int
+    col: int
+    dirs: list
 
 def createMaze(rows, cols, roomHeight, roomWidth, roomDepth):
     maze = genMaze(rows, cols)
@@ -7,7 +15,9 @@ def createMaze(rows, cols, roomHeight, roomWidth, roomDepth):
     for row in range(rows):
         for col in range(cols):
             room = createRoom(roomHeight, roomWidth, roomDepth, maze[row][col].dirs)
+            mazeInfo = MazeInfo(row, col, maze[row][col].dirs)
             list(map(lambda mesh: mesh.translate(roomHeight*row, 0, roomWidth*col), room))
+            list(map(lambda mesh: mesh.data.append(mazeInfo), room))
             meshes.extend(room)
 
     return maze, meshes
@@ -69,7 +79,7 @@ def createQuadPlane(height, width, widthOffset = 0):
         [0, 0, 0, 1],
         [0, height, 0, 1]
     ], dtype=np.float64)
-    
+
     norm = np.tile(np.array([0, 0, 1, 0], dtype=np.float64), (3, 1))
 
     mesh = Mesh([(poly0, norm), (poly1, np.copy(norm))], True, True)

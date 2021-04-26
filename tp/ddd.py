@@ -14,6 +14,8 @@ class Mesh:
         self.hasNormals = hasNormals
         self.isTwoSided = isTwoSided
         self.color = Color(0, 162, 255)
+        self.visible = True
+        self.data = []
 
     @property
     def polys(self):
@@ -70,6 +72,8 @@ class Mesh:
     # Returns list of "processed" polys (Ready for drawing)
     # order mostly from https://www.youtube.com/watch?v=ih20l3pJoeU
     def process(self, camPos, lightDir, height, width, projMatrix, viewMatrix):
+        if not self.visible:
+            return []
         newPolys = copy.deepcopy(self.polys)
         readyPolys = []
         for poly, norms in newPolys:
