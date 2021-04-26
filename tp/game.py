@@ -19,7 +19,7 @@ def startGame(app):
     app.roomHeight = 50
     app.roomWidth = 100
     app.roomDepth = 20
-    app.maze, meshes = createMaze(3, 3, 50, 100, 20)
+    app.maze, meshes = createMaze(app.mazeRows, app.mazeCols, app.roomHeight, app.roomWidth, app.roomDepth)
     app.mazeTransform = np.array([-10, -4, -10])
     app.drawables.extend(meshes)
     for i in range(0, len(app.drawables)):
@@ -30,32 +30,44 @@ def startGame(app):
     app.drawables[-1].color = Color(214, 124, 13)
     app.drawables[-1].translate(4, -3, 4)
     
+    # initialize player/cam coordinates
     app.cam = np.array([0, 0, 0, 0], dtype=np.float64)
     app.camDir = np.array([0, 0, 1, 0], dtype=np.float64)
     app.yaw = 0
 
     app.light = np.array([0, 0, -1, 0])
 
+    # some options
     app.fov = 90
-
     app.wireframe = False
     app.drawFps = True
 
-    setNewProjectionMatrix(app)
-    setNewViewMatrix(app)
-
     targetFps = 144
     app.timerDelay = 1500//targetFps
+
+    app.movementSpeed = 15
+
+    # initialize matrices
+    setNewProjectionMatrix(app)
+    setNewViewMatrix(app)
+    
+    # initialize game logic
+
     app.started = time.time()
     app.lastTime = time.time()
+
     app.heldKeys = set()
-    
-    app.currentRoom = getCurrentRoom(app)
+
+    setCurrentRoom(app)
+
+    app.health = 100
+    app.ammo = 50
 
 def game_sizeChanged(app):
     setNewProjectionMatrix(app)
 
 def doesCamCollide(app):
+    # -1 and +1 is basically the camera/player's imaginary hitbox
     for mesh in app.drawables:
         collides = (mesh.minX-1 <= app.cam[0] <= mesh.maxX+1 and 
                     mesh.minY-1 <= app.cam[1] <= mesh.maxY+1 and 
@@ -65,10 +77,15 @@ def doesCamCollide(app):
 
     return False
 
-def getCurrentRoom(app):
+def setCurrentRoom(app):
     row = int((app.cam[0] - app.mazeTransform[0]) / app.roomHeight)
     col = int((app.cam[2] - app.mazeTransform[2]) / app.roomWidth)
-    return row, col
+    app.currentRoom = row, col
+    for mesh in app.drawables:
+        if app.currentRoom != None and mesh.data != []:  
+            isCurrentOrAdjacentRoom = (abs(mesh.data[0].row - app.currentRoom[0]) <= 1 
+                                        and abs(mesh.data[0].col - app.currentRoom[1]) <= 1)
+            mesh.visible = isCurrentOrAdjacentRoom
 
 def game_keyPressed(app, event):
     key = event.key.lower()
@@ -78,31 +95,51 @@ def game_keyReleased(app, event):
     key = event.key.lower()
     app.heldKeys.remove(key)
 
-def game_timerFired(app):
-    deltaTime = time.time() - app.lastTime
-    speed = 15
-    speed *= deltaTime
-    if app.heldKeys:
-        oldCam = copy.deepcopy(app.cam)
-        # vertex additions
-        if "w" in app.heldKeys:
-            app.cam += app.camDir * speed
-        elif "s" in app.heldKeys:
-            app.cam -= app.camDir * speed
+# drz/drx is delta relative z/x
+def relativeCamMove(app, drz, drx):
+    oldCam = copy.deepcopy(app.cam)
+    app.cam += app.camDir * drz
 
-        sidewaysRotationMatrix = getRotationMatrix(0, 90, 0)
-        sidewaysCamDir = sidewaysRotationMatrix @ app.camDir
+    sidewaysCamDir = app.camDir @ getRotationMatrix(0, 90, 0)
+
+    app.cam += sidewaysCamDir * drx
+
+    if doesCamCollide(app):
+        app.cam = oldCam
+        return
+
+    setCurrentRoom(app)
+
+    
+def recalculateCamDir(app):
+    app.camDir = np.array([0, 0, 1, 0]) @ getYRotationMatrix(app.yaw)
+
+    setNewViewMatrix(app)
+
+def fireGun(app):
+    pass
+
+def processKeys(app, deltaTime):
+    speed = app.movementSpeed*deltaTime
+    if app.heldKeys:
+        # delta relative x/z
+        drx = 0
+        drz = 0
+        # camera movements
+        if "w" in app.heldKeys:
+            drz += speed
+        elif "s" in app.heldKeys:
+            drz -= speed
 
         if "a" in app.heldKeys:
-            app.cam -= sidewaysCamDir * speed
+            drx += speed
         elif "d" in app.heldKeys:
-            app.cam += sidewaysCamDir * speed
-        
-        if doesCamCollide(app):
-            app.cam = oldCam
+            drx -= speed
 
-        angleStep = 15
-        angleStep *= speed
+        relativeCamMove(app, drz, drx)
+
+        # weird but i'm leaving this i guess
+        angleStep = app.movementSpeed*speed
 
         # rotations        
         if "left" in app.heldKeys:
@@ -110,13 +147,20 @@ def game_timerFired(app):
         elif "right" in app.heldKeys:
             app.yaw -= angleStep
 
-        app.camDir = np.array([0, 0, 1, 0]) @ getYRotationMatrix(app.yaw)
-        setNewViewMatrix(app)
-        app.currentRoom = getCurrentRoom(app)
 
+        recalculateCamDir(app)
+
+        if "space" in app.heldKeys:
+            fireGun(app)
+
+
+def game_timerFired(app):
+    deltaTime = time.time() - app.lastTime
+    processKeys(app, deltaTime)
     app.lastTime = time.time()
 
-## Remains of an attempt at texturing/depth-buffering--ended up with <1fps
+
+## Remains of an attempt at starting texturing/depth-buffering--ended up with <1fps so I gave up
 # def drawPolygonOnImage(app, polygon, color):
 #     # sort by y values, higher on screen/lower value first
 #     polygon = polygon[np.argsort(polygon[:,1])]
@@ -160,11 +204,6 @@ def drawPolygon(app, canvas, polygon, color):
 def redraw3D(app, canvas):
     readyPolys = []
     for mesh in app.drawables:
-        if app.currentRoom != None and mesh.data != []:  
-            isCurrentOrAdjacentRoom = (abs(mesh.data[0].row - app.currentRoom[0]) <= 1 
-                                      and abs(mesh.data[0].col - app.currentRoom[1]) <= 1)
-            mesh.visible = isCurrentOrAdjacentRoom
-
         readyPolys.extend(mesh.process(app.cam, app.light,
                                         app.height, app.width,
                                         app.projectionMatrix, app.viewMatrix))
@@ -186,3 +225,6 @@ def game_redrawAll(app, canvas):
     # fps counter
     if app.drawFps:
         canvas.create_text(15, 15, text=int(1/(time.time()-startTime)), anchor="nw")
+
+    canvas.create_text(15, app.height-15, text=app.health, anchor="sw")
+    canvas.create_text(app.width-15, app.height-15, text=app.ammo, anchor="se")

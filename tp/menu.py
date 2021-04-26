@@ -8,7 +8,7 @@ def resetSizeVars(app):
 
 def startMenu(app):
     app.mode = "menu"
-    app.menuItemWidthGuess = 100
+    app.menuItemWidthGuess = 200
     app.menuItems = ["start", "options", "quit"]
     resetSizeVars(app)
 
