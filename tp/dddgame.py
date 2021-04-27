@@ -4,11 +4,19 @@ from ddd import *
 from maze import genMaze
 
 class Character:
-    def __init__(self, mesh: Mesh):
+    def __init__(self, mesh: Mesh, health):
         mesh.data["character"] = True
         # this is just the color of all characters at the moment
         mesh.color = Color(214, 124, 13)
         self.mesh = mesh
+        self.health = health
+
+    def getHit(self, amt):
+        if self.health > 0:
+            self.health -= amt
+            
+        if self.health <= 0:
+            self.mesh.color = Color(0, 0, 0)
 
 
 @dataclass

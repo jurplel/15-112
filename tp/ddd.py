@@ -36,10 +36,13 @@ class Mesh:
             allZ.extend(poly[:,2])
 
         self.maxX = max(allX)
+        self.avgX = sum(allX)/len(allX)
         self.minX = min(allX)
         self.maxY = max(allY)
+        self.avgY = sum(allY)/len(allY)
         self.minY = min(allY)
         self.maxZ = max(allZ)
+        self.avgZ = sum(allZ)/len(allZ)
         self.minZ = min(allZ)
 
     def translate(self, x, y, z):
@@ -319,14 +322,14 @@ def paintersAlgorithmMin(polyAndColor):
 # Depth buffer is the proper solution but tkinter is WAY too slow for that
 def paintersAlgorithmSmart(polyAndColor):
     poly = polyAndColor[0]
-    maxDist = max([vectorDiff(poly[i], poly[i-1])-1 for i in range(1, len(poly))])
+    maxDist = max([vectorDist(poly[i], poly[i-1])-1 for i in range(1, len(poly))])
     arbitraryTunedValue = 500
     if maxDist > arbitraryTunedValue:
         return paintersAlgorithmMin(polyAndColor)
     else:
         return paintersAlgorithm(polyAndColor)
 
-def vectorDiff(vec0: np.array, vec1: np.array):
+def vectorDist(vec0: np.array, vec1: np.array):
     subbed = vec1-vec0
     total = 0
     for term in subbed:

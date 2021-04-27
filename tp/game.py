@@ -27,7 +27,7 @@ def startGame(app):
         app.drawables[i].translate(app.mazeTransform[0], app.mazeTransform[1], app.mazeTransform[2])
     
     ## character test
-    app.characters.append(Character(ply_importer.importPly("res/char.ply")))
+    app.characters.append(Character(ply_importer.importPly("res/char.ply"), 30))
     app.drawables.append(app.characters[-1].mesh)
     app.drawables[-1].translate(4, -3, 4)
 
@@ -43,8 +43,7 @@ def startGame(app):
     app.wireframe = False
     app.drawFps = True
 
-    targetFps = 144
-    app.timerDelay = 1500//targetFps
+    app.timerDelay = 1
 
     app.movementSpeed = 15
 
@@ -55,14 +54,18 @@ def startGame(app):
     # initialize game logic
 
     app.started = time.time()
-    app.lastTime = time.time()
+    app.lastTimerTime = time.time()
 
     app.heldKeys = set()
 
     setCurrentRoom(app)
 
+    # player character parameters
     app.health = 100
     app.ammo = 50
+    app.weaponDamage = 10
+    app.weaponCooldown = 400 # ms
+    app.weaponLastShot = time.time()
 
 def game_sizeChanged(app):
     setNewProjectionMatrix(app)
@@ -118,9 +121,56 @@ def recalculateCamDir(app):
 
     setNewViewMatrix(app)
 
+def isInFrontOfCam(app, mesh: Mesh, threshold):
+    avgVec = np.array([mesh.avgX, mesh.avgY, mesh.avgZ])
+            
+    # Get ray vector from mesh to camera
+    ray = avgVec - app.cam[0:3]
+    ray[1] = 0
+    normVec(ray)
+
+    # Get similarity between camdir and ray
+    similarity = np.dot(ray[0:3], app.camDir[0:3])
+
+    # If the similarity is greater than the threshold, the mesh is considered in front of the camera
+    return similarity > threshold
+
 def fireGun(app):
-    for mesh in app.drawables:
-        pass
+    sinceLastFired = time.time() - app.weaponLastShot
+    if sinceLastFired*1000 < app.weaponCooldown:
+        return
+
+    app.weaponLastShot = time.time()
+    for character in app.characters:
+        # If the similarity is at least 0.95, that is close enough to hit
+        if not isInFrontOfCam(app, character.mesh, 0.95):
+            print("miss")
+            continue
+
+        avgVec = np.array([character.mesh.avgX, character.mesh.avgY, character.mesh.avgZ])
+        dist = vectorDist(avgVec, app.cam[0:3])
+        
+        # Check if the character is blocked by any other meshes
+        occluding = False
+        for mesh in app.drawables:
+            if (isInFrontOfCam(app, mesh, 0.95)):
+                otherAvgVec = np.array([mesh.avgX, mesh.avgY, mesh.avgZ])
+                if vectorDist(otherAvgVec, app.cam[0:3]) < dist:
+                    occluding = True
+                    break
+        
+        # If the character isn't blocked by anything (or close to being blocked by our definition)
+        # then the character got hit!
+        if not occluding:
+            character.getHit(app.weaponDamage)
+            print("hit", character.health)
+            break
+            
+
+
+        print("blocked!")
+        
+
 
 def processKeys(app, deltaTime):
     speed = app.movementSpeed*deltaTime
@@ -158,9 +208,9 @@ def processKeys(app, deltaTime):
 
 
 def game_timerFired(app):
-    deltaTime = time.time() - app.lastTime
+    deltaTime = time.time() - app.lastTimerTime
     processKeys(app, deltaTime)
-    app.lastTime = time.time()
+    app.lastTimerTime = time.time()
 
 
 ## Remains of an attempt at starting texturing/depth-buffering--ended up with <1fps so I gave up
@@ -213,7 +263,7 @@ def redraw3D(app, canvas):
 
 
     # Draw in order with painter's algorithm
-    readyPolys.sort(key=paintersAlgorithmSmart)
+    readyPolys.sort(key=paintersAlgorithmSmart) # This is still messed up, smart or min do not fix it properly
 
     # List comprehensions are potentially faster than for loops
     [drawPolygon(app, canvas, x[0], x[1]) for x in readyPolys]
