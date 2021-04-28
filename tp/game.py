@@ -277,7 +277,9 @@ def game_redrawAll(app, canvas):
 
     # fps counter
     if app.drawFps:
-        canvas.create_text(15, 15, text=int(1/(time.time()-startTime)), anchor="nw")
+        denom = time.time()-startTime
+        if denom != 0:
+            canvas.create_text(15, 15, text=int(1/(time.time()-startTime)), anchor="nw")
 
     canvas.create_text(15, app.height-15, text=app.health, anchor="sw")
     canvas.create_text(app.width-15, app.height-15, text=app.ammo, anchor="se")
