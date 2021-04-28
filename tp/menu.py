@@ -9,7 +9,7 @@ def resetSizeVars(app):
 def startMenu(app):
     app.mode = "menu"
     app.menuItemWidthGuess = 200
-    app.menuItems = ["start", "options", "quit"]
+    app.menuItems = ["start", "quit"]
     resetSizeVars(app)
 
     app.highlightedMenuItem = None
@@ -53,7 +53,7 @@ def menu_redrawAll(app, canvas):
                             anchor="nw", fill=color)
 
     # settings stuff
-    if not app.showingSettings:
-        return
+    # if not app.showingSettings:
+    #     return
 
-    canvas.create_rectangle(app.settingsMargin, app.settingsMargin, app.width-app.settingsMargin, app.height-app.settingsMargin)
+    # canvas.create_rectangle(app.settingsMargin, app.settingsMargin, app.width-app.settingsMargin, app.height-app.settingsMargin)
