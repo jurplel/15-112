@@ -337,6 +337,69 @@ def vectorDist(vec0: np.array, vec1: np.array):
     
     return math.sqrt(total)
 
+# Checks all other meshes  
+def rayIntersectsMeshFirst(mesh: Mesh, allMeshes, startPos, direction, rayLength):
+    if not isMeshVaguelyInFront(mesh, startPos, direction):
+        return False
+
+    intersectsMesh, meshIntersectionPoint = rayIntersectsMesh(mesh, 
+                                            startPos, direction, rayLength)
+                
+    if not intersectsMesh:
+        return False
+
+    intersectionDist = vectorDist(startPos, meshIntersectionPoint)
+
+    for mesh in allMeshes:
+            if not isMeshVaguelyInFront(mesh, startPos, direction):
+                continue
+
+            intersectsOther, otherIntersectionPoint = rayIntersectsMesh(mesh,
+                                                    startPos, direction, rayLength)
+            if intersectsOther and intersectionDist > vectorDist(startPos, otherIntersectionPoint):
+                return False
+
+    return True
+
+def isMeshVaguelyInFront(mesh: Mesh, startPos, direction):
+    avgVec = np.array([mesh.avgX, mesh.avgY, mesh.avgZ])
+            
+    # Get ray vector from mesh to camera
+    ray = avgVec - startPos[0:3]
+    normVec(ray)
+
+    # Get similarity between camdir and ray
+    similarity = np.dot(ray[0:3], direction[0:3])
+
+    # If they aren't even close, skip
+    return similarity > 0.6
+    
+# Returns tuple: (isIntersecting, intersectionPoint)
+def rayIntersectsMesh(mesh: Mesh, startPos, direction, rayLength):
+    # Check each polygon's plane for some reason
+    for poly, norm in mesh.polys:
+        # Find point of intersection with the plane
+        intersection = linePlaneIntersection(poly[0], norm[0], startPos, direction*rayLength)
+        
+        # If intersection point is within the mesh, then its a hit!
+        collides = pointCollision(mesh, intersection)
+        if collides:
+            return (True, intersection)
+
+    return (False, None)
+
+def meshCollision(mesh0: Mesh, mesh1: Mesh):
+    xCollides = pointCollision(mesh0, mesh1.minX) or pointCollision(mesh0, mesh1.maxX)
+    yCollides = pointCollision(mesh0, mesh1.minY) or pointCollision(mesh0, mesh1.maxY)
+    zCollides = pointCollision(mesh0, mesh1.minZ) or pointCollision(mesh0, mesh1.maxZ)
+    return xCollides and yCollides and zCollides
+
+def pointCollision(mesh: Mesh, pointVec: np.array, margin = 0):
+    collides = (mesh.minX-margin <= pointVec[0] <= mesh.maxX+margin and 
+                mesh.minY-margin <= pointVec[1] <= mesh.maxY+margin and 
+                mesh.minZ-margin <= pointVec[2] <= mesh.maxZ+margin)
+
+    return collides
 
 # Used instead of built in np.linalg.norm for performance reasons
 def normVec(vec: np.array):

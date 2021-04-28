@@ -66,6 +66,7 @@ def startGame(app):
     app.weaponDamage = 10
     app.weaponCooldown = 400 # ms
     app.weaponLastShot = time.time()
+    app.weaponRange = 50
 
 def game_sizeChanged(app):
     setNewProjectionMatrix(app)
@@ -109,9 +110,10 @@ def relativeCamMove(app, drz, drx):
 
     app.cam += sidewaysCamDir * drx
 
-    if doesCamCollide(app):
-        app.cam = oldCam
-        return
+    for mesh in app.drawables:
+        if pointCollision(mesh, app.cam, 1):
+            app.cam = oldCam
+            return
 
     setCurrentRoom(app)
 
@@ -121,20 +123,6 @@ def recalculateCamDir(app):
 
     setNewViewMatrix(app)
 
-def isInFrontOfCam(app, mesh: Mesh, threshold):
-    avgVec = np.array([mesh.avgX, mesh.avgY, mesh.avgZ])
-            
-    # Get ray vector from mesh to camera
-    ray = avgVec - app.cam[0:3]
-    ray[1] = 0
-    normVec(ray)
-
-    # Get similarity between camdir and ray
-    similarity = np.dot(ray[0:3], app.camDir[0:3])
-
-    # If the similarity is greater than the threshold, the mesh is considered in front of the camera
-    return similarity > threshold
-
 def fireGun(app):
     sinceLastFired = time.time() - app.weaponLastShot
     if sinceLastFired*1000 < app.weaponCooldown:
@@ -142,33 +130,15 @@ def fireGun(app):
 
     app.weaponLastShot = time.time()
     for character in app.characters:
-        # If the similarity is at least 0.95, that is close enough to hit
-        if not isInFrontOfCam(app, character.mesh, 0.95):
-            print("miss")
-            continue
-
-        avgVec = np.array([character.mesh.avgX, character.mesh.avgY, character.mesh.avgZ])
-        dist = vectorDist(avgVec, app.cam[0:3])
-        
-        # Check if the character is blocked by any other meshes
-        occluding = False
-        for mesh in app.drawables:
-            if (isInFrontOfCam(app, mesh, 0.95)):
-                otherAvgVec = np.array([mesh.avgX, mesh.avgY, mesh.avgZ])
-                if vectorDist(otherAvgVec, app.cam[0:3]) < dist:
-                    occluding = True
-                    break
+        hit = rayIntersectsMeshFirst(character.mesh, app.drawables, 
+                                app.cam, app.camDir, app.weaponRange)
         
         # If the character isn't blocked by anything (or close to being blocked by our definition)
         # then the character got hit!
-        if not occluding:
+        if hit:
             character.getHit(app.weaponDamage)
             print("hit", character.health)
             break
-            
-
-
-        print("blocked!")
         
 
 
