@@ -127,8 +127,14 @@ def createDoorway(height, width):
 
     return planes
 
-def createQuadPlane(height, width, widthOffset = 0):
+def createQuadPlane(height, width, maxWidth = 20):
     meshes = []
+    if width > maxWidth:
+        meshes.extend(createQuadPlane(height, width-maxWidth, maxWidth))
+        for mesh in meshes:
+            mesh.translate(maxWidth, 0, 0)
+
+        width = maxWidth
 
     poly0 = np.array([
         [0, height, 0, 1],
