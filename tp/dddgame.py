@@ -34,14 +34,15 @@ def populateMazeWithEnemies(maze, meshes, roomHeight, roomWidth):
     enemyChance = 70 # 70% chance to have enemies
     maxNumberOfEnemies = 3
 
-    enemyTranslateY = -3
-
     enemies = []
 
     rows = len(maze)
     cols = len(maze[0])
     for row in range(rows):
         for col in range(cols):
+            if row == 0 and col == 0:
+                continue
+
             willEvenHaveEnemies = random.randint(0, 100)
             if willEvenHaveEnemies > enemyChance:
                 continue
@@ -53,7 +54,7 @@ def populateMazeWithEnemies(maze, meshes, roomHeight, roomWidth):
 
                 # Give the enemy a random position in the room
                 xPos, yPos = random.random(), random.random()
-                newEnemy.mesh.translate(roomHeight*(row+xPos), enemyTranslateY, roomWidth*(col+yPos))
+                newEnemy.mesh.translate(roomHeight*(row+xPos), 0, roomWidth*(col+yPos))
 
                 # Set mazeinfo for rendering shortcuts
                 mazeInfo = MazeInfo(row, col, maze[row][col].dirs)
