@@ -216,9 +216,9 @@ def clipAllPolysOnScreenEdgePlanes(polysAndColors: np.array, height, width):
     bigPolysAndColors = []
     for poly, color in polysAndColors:
         result0, polys0 = clipPolyOnPlane(poly, [0, 0, 0], [0, 1, 0])
-        result1, polys1 = clipPolyOnPlane(poly, [0, height, 0], [0, -1, 0])
+        result1, polys1 = clipPolyOnPlane(poly, [0, height-1, 0], [0, -1, 0])
         result2, polys2 = clipPolyOnPlane(poly, [0, 0, 0], [1, 0, 0])
-        result3, polys3 = clipPolyOnPlane(poly, [width, 0, 0], [-1, 0, 0])
+        result3, polys3 = clipPolyOnPlane(poly, [width-1, 0, 0], [-1, 0, 0])
         
         bigPolys = polys0 + polys1 + polys2 + polys3
         

@@ -54,7 +54,7 @@ def populateMazeWithEnemies(maze, meshes, roomHeight, roomWidth):
                 newEnemy = Character(importPly("res/char.ply"))
 
                 # Give the enemy a random position in the room somewhere near the middle
-                xPos, yPos = random.uniform(0.25, 0.75), random.uniform(0.25, 0.75)
+                xPos, yPos = random.uniform(0.3, 0.6), random.uniform(0.25, 0.75)
                 newEnemy.mesh.translate(roomHeight*(row+xPos), 0, roomWidth*(col+yPos))
 
                 # Set mazeinfo for rendering shortcuts
@@ -130,7 +130,7 @@ def createDoorway(height, width):
 
     return planes
 
-def createQuadPlane(height, width, maxWidth = None):
+def createQuadPlane(height, width, maxWidth = 50):
     meshes = []
     if maxWidth != None and width > maxWidth:
         meshes.extend(createQuadPlane(height, width-maxWidth, maxWidth))

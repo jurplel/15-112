@@ -46,7 +46,7 @@ def startGame(app):
 
     # some options
     app.fov = 90
-    app.wireframe = False # I recommend trying this option!
+    app.wireframe = True # I recommend trying this option!
     app.drawFps = True
     app.drawCrosshair = True
 
