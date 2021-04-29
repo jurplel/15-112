@@ -94,25 +94,22 @@ class Mesh:
             # To camera space
             np.matmul(poly, viewMatrix, poly)
 
+            # The end of the polygon processing pipeline--may be run on multiple polygons so thats why its here
+            def finishPoly(polyReadyForFinishing):
+                projectPoly(polyReadyForFinishing, projMatrix)
+                toRasterSpace(polyReadyForFinishing, height, width)
+                readyPolys.append((polyReadyForFinishing, lightedColor.toHex()))
+
             # Clip against z near clipping plane
-            clipResult = nearClipViewSpacePoly(poly)
+            clipResult = clipPolyOnNearPlane(poly)
             if clipResult[0] == False:
                 continue
             elif clipResult[0] == True:
                 newClipPolys = clipResult[1]
                 for newClipPoly in newClipPolys:
-                    # This really should be cleaned up!!
-                    projectPoly(newClipPoly, projMatrix)
-                    toRasterSpace(newClipPoly, height, width)
-                    readyPolys.append((newClipPoly, lightedColor.toHex()))
+                    finishPoly(newClipPoly)
 
-            # Perspective projection
-            projectPoly(poly, projMatrix)
-
-            # To raster space
-            toRasterSpace(poly, height, width)
-
-            readyPolys.append((poly, lightedColor.toHex()))
+            finishPoly(poly)
 
         return readyPolys
 
@@ -247,25 +244,49 @@ def linePlaneIntersection(plane: np.array, planeNorm: np.array, P0, P1):
     return P
 
 # Concept from https://youtu.be/HXSuNxpCzdM?t=2378
+def clipPolyOnNearPlane(poly: np.array, zNear = 2):
+    zPlane, zPlaneNorm = [0, 0, zNear], [0, 0, 1]
+    return clipPolyOnPlane(poly, zPlane, zPlaneNorm)
+
+# This is from the video specifically--clipping in screen space against these "planes"
+# pretty cool technique
+def clipAllPolysOnScreenEdgePlanes(polysAndColors: np.array, height, width):
+    bigPolysAndColors = []
+    for poly, color in polysAndColors:
+        result0, polys0 = clipPolyOnPlane(poly, [0, 0, 0], [0, 1, 0])
+        result1, polys1 = clipPolyOnPlane(poly, [0, height, 0], [0, -1, 0])
+        result2, polys2 = clipPolyOnPlane(poly, [0, 0, 0], [1, 0, 0])
+        result3, polys3 = clipPolyOnPlane(poly, [width, 0, 0], [-1, 0, 0])
+        
+        bigPolys = polys0 + polys1 + polys2 + polys3
+        
+        for poly in bigPolys:
+            bigPolysAndColors.append((poly, color))
+             
+
+    return True, bigPolysAndColors
+
+
 # Returns tuple of format (isNewPolys, listOfNewPolys)
 # isNewPolys == None -> don't do anything
 # isNewPolys == False -> Delete entire polygon
 # isNewPolys == True -> add listOfNewPolys to draw queue
 # The current polygon is modified destructively, so there is no need to skip drawing
-def nearClipViewSpacePoly(poly: np.array, zNear = 2): 
+def clipPolyOnPlane(poly: np.array, plane: np.array, planeNorm: np.array): 
     # znear should probably be like 0.1 so it doesn't clip walls too near to the player, but that would require proper clipping on all planes
     newPolys = []
     clipped = []
     # for each vector in this polygon, if its z coordinate is too close to the camera, mark it for clipping
     for i, vec in enumerate(poly):
-        if vec[2] <= zNear:
+        dist = pointAndPlaneDist(vec, plane, planeNorm)
+        if dist < 0:
             clipped.append(i)
 
     # This downwards is the concept taken from the video
     if len(clipped) == 0:
-        return (None, None)
+        return (None, newPolys)
     elif len(clipped) == 3:
-        return (False, None)
+        return (False, newPolys)
 
     notClipped = (set([0, 1, 2]) - set(clipped))
 
@@ -275,8 +296,8 @@ def nearClipViewSpacePoly(poly: np.array, zNear = 2):
         vec1 = poly[notClipped.pop()]
         vec2 = poly[notClipped.pop()]
 
-        intersection1 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], vec0[0:3], vec1[0:3])
-        intersection2 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], vec0[0:3], vec2[0:3])
+        intersection1 = linePlaneIntersection(plane, planeNorm, vec0[0:3], vec1[0:3])
+        intersection2 = linePlaneIntersection(plane, planeNorm, vec0[0:3], vec2[0:3])
 
         np.put(vec0, [0, 1, 2], intersection1) # Replace 0, 1, and 2 indices
         newPolys.append(np.array([vec0, vec2, np.append(intersection2, 1)]))
@@ -286,8 +307,8 @@ def nearClipViewSpacePoly(poly: np.array, zNear = 2):
         vec1 = poly[clipped[1]]
         vec2 = poly[notClipped.pop()]
 
-        intersection1 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], vec0[0:3], vec2[0:3])
-        intersection2 = linePlaneIntersection([0, 0, zNear], [0, 0, 1], vec1[0:3], vec2[0:3])
+        intersection1 = linePlaneIntersection(plane, planeNorm, vec0[0:3], vec2[0:3])
+        intersection2 = linePlaneIntersection(plane, planeNorm, vec1[0:3], vec2[0:3])
 
         np.put(vec0, [0, 1, 2], intersection1) # Replace 0, 1, and 2 indices
         np.put(vec1, [0, 1, 2], intersection2) # Replace 0, 1, and 2 indices
@@ -323,6 +344,18 @@ def vectorDist(vec0: np.array, vec1: np.array):
         total += term**2
     
     return math.sqrt(total)
+
+# I know this is stackoverflow but this is a brilliantly simple answer don't @ me
+# https://stackoverflow.com/questions/3860206/signed-distance-between-plane-and-point
+def pointAndPlaneDist(point: np.array, plane: np.array, planeNorm: np.array):
+    return np.dot(planeNorm, point[0:3]-plane[0:3])
+
+# https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_plane#Restatement_using_linear_algebra
+# https://tutorial.math.lamar.edu/classes/calciii/eqnsofplanes.aspx
+def closestPointOnPlane(point: np.array, plane: np.array, planeNorm: np.array):
+    planeScalar = sum(np.multiply(plane, planeNorm))
+    pointOnPlane = (point*planeScalar)/(vectorMagnitude(point)**2)
+    return pointOnPlane
 
 # Checks all other meshes  
 def rayIntersectsMeshFirst(mesh: Mesh, allMeshes, startPos, direction, rayLength):
@@ -397,8 +430,10 @@ def pointCollision(mesh: Mesh, pointVec: np.array, margin = 0):
 
 # Used instead of built in np.linalg.norm for performance reasons
 def normVec(vec: np.array):
-    magnitude = math.sqrt(vec[0]**2+vec[1]**2+vec[2]**2)
-    vec /= magnitude
+    vec /= vectorMagnitude(vec)
+
+def vectorMagnitude(vec: np.array):
+    return math.sqrt(vec[0]**2+vec[1]**2+vec[2]**2)
 
 def meshListToMesh(meshList):
     bigPolys = []
