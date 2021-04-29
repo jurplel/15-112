@@ -18,7 +18,7 @@ def startGame(app):
     app.maze = None
 
     ## maze test
-    app.mazeRows = app.mazeCols = 3
+    app.mazeRows = app.mazeCols = 5
     app.roomHeight = 50
     app.roomWidth = 100
     app.roomDepth = 20
@@ -50,6 +50,8 @@ def startGame(app):
     app.wireframe = False # I recommend trying this option!
     app.drawFps = True
     app.drawCrosshair = True
+
+    app.hudMargin = 15
 
     app.timerDelay = 1
 
@@ -259,6 +261,21 @@ def redraw3D(app, canvas):
     # List comprehensions are potentially faster than for loops
     [drawPolygon(app, canvas, x[0], x[1]) for x in readyPolys]
 
+def drawHud(app, canvas):
+    canvas.create_text(app.hudMargin, app.height-app.hudMargin, text=app.health, anchor="sw")
+    canvas.create_text(app.width-app.hudMargin, app.height-app.hudMargin, text=app.ammo, anchor="se")
+
+    # Current pos HUD
+    canvas.create_text(app.hudMargin, app.height-app.hudMargin*3, 
+                        text=f"Row {app.currentRoom[0]+1}/{app.mazeRows}, " +
+                             f"Col {app.currentRoom[1]+1}/{app.mazeCols}",
+                         anchor="sw")
+
+    if app.drawCrosshair:
+        r = 2
+        canvas.create_rectangle(app.width/2-r, app.height/2-r, app.width/2+r, app.height/2+r,
+            fill="white", width=1)
+
 def game_redrawAll(app, canvas):
     if app.drawFps:
         startTime = time.time()
@@ -266,16 +283,10 @@ def game_redrawAll(app, canvas):
     # Draw all 3D meshes/polygons
     redraw3D(app, canvas)
 
+    drawHud(app, canvas)
+
     # fps counter
     if app.drawFps:
         denom = time.time()-startTime
         if denom != 0:
             canvas.create_text(15, 15, text=int(1/(time.time()-startTime)), anchor="nw")
-
-    canvas.create_text(15, app.height-15, text=app.health, anchor="sw")
-    canvas.create_text(app.width-15, app.height-15, text=app.ammo, anchor="se")
-
-    if app.drawCrosshair:
-        r = 2
-        canvas.create_rectangle(app.width/2-r, app.height/2-r, app.width/2+r, app.height/2+r,
-            fill="white", width=1)
