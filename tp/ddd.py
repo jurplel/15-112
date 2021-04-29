@@ -101,6 +101,7 @@ class Mesh:
             elif clipResult[0] == True:
                 newClipPolys = clipResult[1]
                 for newClipPoly in newClipPolys:
+                    # This really should be cleaned up!!
                     projectPoly(newClipPoly, projMatrix)
                     toRasterSpace(newClipPoly, height, width)
                     readyPolys.append((newClipPoly, lightedColor.toHex()))
@@ -310,24 +311,10 @@ def paintersAlgorithm(polyAndColor):
     poly = polyAndColor[0]
     return sum(vector[2] for vector in poly)/3
 
-# Version of the above that sorts by the closest values instead of midpoints. 
-# Maybe not the best overall but seems better for this game.
+# Version of the above that sorts by the closest values instead of midpoints.
 def paintersAlgorithmMin(polyAndColor):
     poly = polyAndColor[0]
     return min(poly[:,2])
-
-# Note: Might be a misnomer.
-# Uses the other two painters algorithms based on the size of the largest line in the polygon
-# If it is above an arbitrary value, it will use the hacky algorithm, otherwise, the proper one can be used
-# Depth buffer is the proper solution but tkinter is WAY too slow for that
-def paintersAlgorithmSmart(polyAndColor):
-    poly = polyAndColor[0]
-    maxDist = max([vectorDist(poly[i], poly[i-1])-1 for i in range(1, len(poly))])
-    arbitraryTunedValue = 500
-    if maxDist > arbitraryTunedValue:
-        return paintersAlgorithmMin(polyAndColor)
-    else:
-        return paintersAlgorithm(polyAndColor)
 
 def vectorDist(vec0: np.array, vec1: np.array):
     subbed = vec1-vec0
@@ -388,10 +375,17 @@ def rayIntersectsMesh(mesh: Mesh, startPos, direction, rayLength):
 
     return (False, None)
 
+def meshCollidesWithOtherMeshes(mesh: Mesh, otherMeshes):
+    for otherMesh in otherMeshes:
+        if meshCollision(mesh, otherMesh):
+            return True
+
+    return False
+
 def meshCollision(mesh0: Mesh, mesh1: Mesh):
-    xCollides = pointCollision(mesh0, mesh1.minX) or pointCollision(mesh0, mesh1.maxX)
-    yCollides = pointCollision(mesh0, mesh1.minY) or pointCollision(mesh0, mesh1.maxY)
-    zCollides = pointCollision(mesh0, mesh1.minZ) or pointCollision(mesh0, mesh1.maxZ)
+    xCollides = mesh0.minX <= mesh1.minX <= mesh0.maxX or mesh0.minX <= mesh1.maxX <= mesh0.maxX
+    yCollides = mesh0.minY <= mesh1.minY <= mesh0.maxY or mesh0.minY <= mesh1.maxY <= mesh0.maxY
+    zCollides = mesh0.minZ <= mesh1.minZ <= mesh0.maxZ or mesh0.minZ <= mesh1.maxZ <= mesh0.maxZ
     return xCollides and yCollides and zCollides
 
 def pointCollision(mesh: Mesh, pointVec: np.array, margin = 0):

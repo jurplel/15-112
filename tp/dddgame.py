@@ -1,15 +1,19 @@
 from dataclasses import dataclass
 
+import random
+
+from ply_importer import importPly
+
 from ddd import *
 from maze import genMaze
 
 class Character:
-    def __init__(self, mesh: Mesh, health):
-        mesh.data["character"] = True
+    def __init__(self, mesh: Mesh):
+        mesh.data["ischaracter"] = True
         # this is just the color of all characters at the moment
         mesh.color = Color(214, 124, 13)
         self.mesh = mesh
-        self.health = health
+        self.health = 30
 
     def getHit(self, amt):
         if self.health > 0:
@@ -24,6 +28,45 @@ class MazeInfo:
     row: int
     col: int
     dirs: list
+
+# Returns addedCharacters (meshes is destructively modified)
+def populateMazeWithEnemies(maze, meshes, roomHeight, roomWidth):
+    enemyChance = 70 # 70% chance to have enemies
+    maxNumberOfEnemies = 3
+
+    enemyTranslateY = -3
+
+    enemies = []
+
+    rows = len(maze)
+    cols = len(maze[0])
+    for row in range(rows):
+        for col in range(cols):
+            willEvenHaveEnemies = random.randint(0, 100)
+            if willEvenHaveEnemies > enemyChance:
+                continue
+
+            numberOfEnemies = random.randint(1, maxNumberOfEnemies)
+            successCount = 0
+            while successCount < numberOfEnemies:
+                newEnemy = Character(importPly("res/char.ply"))
+
+                # Give the enemy a random position in the room
+                xPos, yPos = random.random(), random.random()
+                newEnemy.mesh.translate(roomHeight*(row+xPos), enemyTranslateY, roomWidth*(col+yPos))
+
+                # Set mazeinfo for rendering shortcuts
+                mazeInfo = MazeInfo(row, col, maze[row][col].dirs)
+                newEnemy.mesh.data["mazeinfo"] = mazeInfo
+
+                # Make sure its not colliding with anything else
+                if not meshCollidesWithOtherMeshes(newEnemy.mesh, meshes):
+                    enemies.append(newEnemy)
+                    meshes.append(newEnemy.mesh)
+                    successCount += 1
+
+    return enemies
+
 
 def createMaze(rows, cols, roomHeight, roomWidth, roomDepth):
     maze = genMaze(rows, cols)
