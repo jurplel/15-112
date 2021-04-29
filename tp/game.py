@@ -104,9 +104,11 @@ def setCurrentRoom(app):
             rowDiff = abs(meshMazeInfo.row - app.currentRoom[0])
             colDiff = abs(meshMazeInfo.col - app.currentRoom[1])
             
-            isCurrentOrAdjacentRoom = rowDiff <= 1 and colDiff == 0 or colDiff <= 1 and rowDiff == 0
+            # isCurrentOrAdjacentRoom = rowDiff <= 1 and colDiff == 0 or colDiff <= 1 and rowDiff == 0
 
-            mesh.toBeDrawn = isCurrentOrAdjacentRoom
+            isCurrentRoom = rowDiff == 0 and colDiff == 0
+
+            mesh.toBeDrawn = isCurrentRoom
 
 def game_keyPressed(app, event):
     key = event.key.lower()
@@ -246,8 +248,8 @@ def redraw3D(app, canvas):
                                         app.height, app.width,
                                         app.projectionMatrix, app.viewMatrix))
 
+    # Clip on screen edges in screen space
     morePolys = clipAllPolysOnScreenEdgePlanes(readyPolys, app.height, app.width)
-
     readyPolys.extend(morePolys)
 
     # Draw in order with painter's algorithm

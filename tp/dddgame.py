@@ -55,6 +55,7 @@ def populateMazeWithEnemies(maze, mazeColors, meshes, roomHeight, roomWidth):
 
                 # Give the enemy a random position in the room somewhere near the middle
                 xPos, yPos = random.uniform(0.3, 0.6), random.uniform(0.25, 0.75)
+                newEnemy.mesh.rotateY(random.uniform(0, 360))
                 newEnemy.mesh.translate(roomHeight*(row+xPos), 0, roomWidth*(col+yPos))
 
                 # Set mazeinfo for rendering shortcuts
@@ -93,7 +94,7 @@ def createMaze(rows, cols, roomHeight, roomWidth, roomDepth):
     return maze, mazeColors, meshes
 
 # Returns 4 meshes without doorway, add 2 for each doorway
-def createRoom(height, width, depth, doorways = [], floorAndCeiling = True):
+def createRoom(height, width, depth, doorways = [], floor = False, ceiling = True):
     plane0 = createQuadPlane(depth, height)
     plane1 = createQuadPlane(depth, height)
     plane2 = createQuadPlane(depth, width)
@@ -122,16 +123,19 @@ def createRoom(height, width, depth, doorways = [], floorAndCeiling = True):
     planes = plane0 + plane1 + plane2 + plane3
 
     # Floor and ceiling
-    if floorAndCeiling:
+    if floor:
         plane4 = createQuadPlane(width, height)
         list(map(lambda mesh: mesh.rotateX(90), plane4))
         list(map(lambda mesh: mesh.translate(0, 0, width), plane4))
 
+        planes.extend(plane4)
+
+    if ceiling:
         plane5 = createQuadPlane(width, height)
         list(map(lambda mesh: mesh.rotateX(270), plane5))
         list(map(lambda mesh: mesh.translate(0, depth, 0), plane5))
 
-        planes.extend(plane4 + plane5)
+        planes.extend(plane5)
 
     return planes
 
@@ -151,7 +155,7 @@ def createDoorway(height, width):
 
     return planes
 
-def createQuadPlane(height, width, maxWidth = None):
+def createQuadPlane(height, width, maxWidth = 25):
     meshes = []
     if maxWidth != None and width > maxWidth:
         meshes.extend(createQuadPlane(height, width-maxWidth, maxWidth))
