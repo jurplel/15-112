@@ -100,12 +100,15 @@ def createRoom(height, width, depth, doorways = []):
             plane3 = createDoorway(depth, width)
 
     # Since doorway may be a list, all of these planes are stored as lists of meshes
-    list(map(lambda mesh: mesh.translate(0, 0, width), plane1))
+    
+    list(map(lambda mesh: mesh.rotateY(180), plane1))
+    list(map(lambda mesh: mesh.translate(height, 0, width), plane1))
 
     list(map(lambda mesh: mesh.rotateY(90), plane2))
     list(map(lambda mesh: mesh.translate(height, 0, 0), plane2))
 
-    list(map(lambda mesh: mesh.rotateY(90), plane3))
+    list(map(lambda mesh: mesh.rotateY(270), plane3))
+    list(map(lambda mesh: mesh.translate(0, 0, width), plane3))
 
     planes = plane0 + plane1 + plane2 + plane3
 
@@ -122,7 +125,7 @@ def createDoorway(height, width):
     list(map(lambda mesh: mesh.translate((width-doorWidth)/2, doorHeight, 0), plane2))
 
     planes = plane0 + plane1 + plane2
-    # after modifying polygons in place, recalculate hitboxes
+    # after modifying polygons in place, recalculate hitboxes (might not even be necessary now)
     [plane.calcCollisionParameters() for plane in planes]
 
     return planes
@@ -149,6 +152,6 @@ def createQuadPlane(height, width, maxWidth = None):
 
     norm = np.tile(np.array([0, 0, 1, 0], dtype=np.float64), (3, 1))
 
-    mesh = Mesh([(poly0, norm), (poly1, np.copy(norm))], True, True)
+    mesh = Mesh([(poly0, norm), (poly1, np.copy(norm))], True)
     meshes.append(mesh)
     return meshes

@@ -103,7 +103,7 @@ class Mesh:
             if self.hasNormals:
                 avgNormal = np.add.reduce(norms) / len(norms)
                 # Culling
-                if not self.isTwoSided and cull(avgNormal, poly, camPos):
+                if cull(avgNormal, poly, camPos):
                     continue
 
                 # Flat shading
@@ -286,7 +286,7 @@ def cull(avgNormal, poly, camPos):
 
 # https://www.youtube.com/watch?v=XgMWc6LumG4
 def flatLightingFactor(avgNormal, lightVector):
-    return max(0.25, np.dot(avgNormal, lightVector))
+    return max(0.25, np.dot(avgNormal, -lightVector))
 
 # https://www.youtube.com/watch?v=XgMWc6LumG4
 def paintersAlgorithm(polyAndColor):
@@ -324,7 +324,7 @@ def rayIntersectsMeshFirst(mesh: Mesh, allMeshes, startPos, direction):
 
     return True
 
-def isMeshVaguelyInFront(mesh: Mesh, startPos, direction):
+def isMeshVaguelyInFront(mesh: Mesh, startPos, direction, similarityThreshold = 0.6):
     avgVec = np.array([mesh.avgX, mesh.avgY, mesh.avgZ])
             
     # Get ray vector from mesh to camera
@@ -335,7 +335,7 @@ def isMeshVaguelyInFront(mesh: Mesh, startPos, direction):
     similarity = np.dot(ray[0:3], direction[0:3])
 
     # If they aren't even close, skip
-    return similarity > 0.6
+    return similarity > similarityThreshold
     
 # Returns tuple: (isIntersecting, intersectionPoint)
 def rayIntersectsMesh(mesh: Mesh, startPos, direction):

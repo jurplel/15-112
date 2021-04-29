@@ -241,7 +241,7 @@ def drawPolygon(app, canvas, polygon, color):
 def redraw3D(app, canvas):
     readyPolys = []
     for mesh in app.drawables:
-        readyPolys.extend(mesh.process(app.cam, app.light,
+        readyPolys.extend(mesh.process(app.cam, app.camDir,
                                         app.height, app.width,
                                         app.projectionMatrix, app.viewMatrix))
 
