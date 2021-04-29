@@ -20,7 +20,7 @@ class Character:
             self.health -= amt
             
         if self.health <= 0:
-            self.mesh.color = Color(0, 0, 0)
+            self.mesh.visible = False
 
 
 @dataclass

@@ -105,7 +105,7 @@ def setCurrentRoom(app):
             
             isCurrentOrAdjacentRoom = rowDiff <= 1 and colDiff == 0 or colDiff <= 1 and rowDiff == 0
 
-            mesh.visible = isCurrentOrAdjacentRoom
+            mesh.toBeDrawn = isCurrentOrAdjacentRoom
 
 def game_keyPressed(app, event):
     key = event.key.lower()

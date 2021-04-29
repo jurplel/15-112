@@ -12,12 +12,15 @@ from dddutil import *
 class Mesh:
     def __init__(self, polys, hasNormals, isTwoSided = False):
         self._polys = polys
-        self.calcCollisionParameters()
         self.hasNormals = hasNormals
         self.isTwoSided = isTwoSided
         self.color = Color(0, 162, 255)
-        self.visible = True
+        self._visible = True
+        self.toBeDrawn = True
         self.data = dict()
+        self.calcCollisionParameters()
+
+    # https://www.geeksforgeeks.org/getter-and-setter-in-python/
 
     @property
     def polys(self):
@@ -28,14 +31,28 @@ class Mesh:
         self._polys = new_value
         self.calcCollisionParameters()
 
+    @property
+    def visible(self):
+        return self._visible
+
+    @visible.setter
+    def visible(self, new_value):
+        self._visible = new_value
+        self.calcCollisionParameters()
+
     def calcCollisionParameters(self):
         allX = []
         allY = []
         allZ = []
-        for poly, _norm in self._polys:
-            allX.extend(poly[:,0])
-            allY.extend(poly[:,1])
-            allZ.extend(poly[:,2])
+        if self.visible:
+            for poly, _norm in self._polys:
+                allX.extend(poly[:,0])
+                allY.extend(poly[:,1])
+                allZ.extend(poly[:,2])
+        else:
+            allX.append(0)
+            allY.append(0)
+            allZ.append(0)
 
         self.maxX = max(allX)
         self.avgX = sum(allX)/len(allX)
@@ -77,7 +94,7 @@ class Mesh:
     # Returns list of "processed" polys (Ready for drawing)
     # order mostly from https://www.youtube.com/watch?v=ih20l3pJoeU
     def process(self, camPos, lightDir, height, width, projMatrix, viewMatrix):
-        if not self.visible:
+        if not self.toBeDrawn or not self.visible:
             return []
         newPolys = copy.deepcopy(self.polys)
         readyPolys = []
