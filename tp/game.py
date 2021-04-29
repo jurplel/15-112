@@ -42,7 +42,7 @@ def startGame(app):
     app.camDir = np.array([0, 0, 1, 0], dtype=np.float64)
     app.yaw = 0
 
-    app.light = np.array([1, 0, 1, 0], dtype=np.float64)
+    app.light = np.array([1, -0.5, 1, 0], dtype=np.float64)
     normVec(app.light)
 
     # some options
