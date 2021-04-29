@@ -18,24 +18,24 @@ def startGame(app):
     app.maze = None
 
     ## maze test
-    # app.mazeRows = app.mazeCols = 3
-    # app.roomHeight = 50
-    # app.roomWidth = 100
-    # app.roomDepth = 20
-    # app.maze, meshes = createMaze(app.mazeRows, app.mazeCols, app.roomHeight, app.roomWidth, app.roomDepth)
-    # app.mazeTransform = np.array([-10, -4, -10])
-    # for i in range(0, len(meshes)):
-    #     meshes[i].translate(app.mazeTransform[0], app.mazeTransform[1], app.mazeTransform[2])
+    app.mazeRows = app.mazeCols = 3
+    app.roomHeight = 50
+    app.roomWidth = 100
+    app.roomDepth = 20
+    app.maze, meshes = createMaze(app.mazeRows, app.mazeCols, app.roomHeight, app.roomWidth, app.roomDepth)
+    app.mazeTransform = np.array([-10, -4, -10])
+    for i in range(0, len(meshes)):
+        meshes[i].translate(app.mazeTransform[0], app.mazeTransform[1], app.mazeTransform[2])
     
-    # enemies = populateMazeWithEnemies(app.maze, meshes, app.roomHeight, app.roomWidth)
-    # app.characters.extend(enemies)
+    enemies = populateMazeWithEnemies(app.maze, meshes, app.roomHeight, app.roomWidth)
+    app.characters.extend(enemies)
 
-    # app.drawables.extend(meshes)
+    app.drawables.extend(meshes)
 
     ## character test
-    app.characters.append(Character(ply_importer.importPly("res/char.ply")))
-    app.drawables.append(app.characters[-1].mesh)
-    app.drawables[-1].translate(4, -3, 4)
+    # app.characters.append(Character(ply_importer.importPly("res/char.ply")))
+    # app.drawables.append(app.characters[-1].mesh)
+    # app.drawables[-1].translate(4, -3, 4)
 
     # initialize player/cam coordinates
     app.cam = np.array([0, 0, 0, 0], dtype=np.float64)
@@ -46,8 +46,9 @@ def startGame(app):
 
     # some options
     app.fov = 90
-    app.wireframe = False
+    app.wireframe = False # I recommend trying this option!
     app.drawFps = True
+    app.drawCrosshair = True
 
     app.timerDelay = 1
 
@@ -245,14 +246,13 @@ def redraw3D(app, canvas):
                                         app.height, app.width,
                                         app.projectionMatrix, app.viewMatrix))
 
+    morePolys = clipAllPolysOnScreenEdgePlanes(readyPolys, app.height, app.width)
+
+    readyPolys.extend(morePolys)
 
     # Draw in order with painter's algorithm
     readyPolys.sort(key=paintersAlgorithm)
 
-    # Note to self: try this before the sort
-    clipResult, morePolys = clipAllPolysOnScreenEdgePlanes(readyPolys, app.height, app.width)
-
-    readyPolys.extend(morePolys)
 
     # List comprehensions are potentially faster than for loops
     [drawPolygon(app, canvas, x[0], x[1]) for x in readyPolys]
@@ -272,3 +272,8 @@ def game_redrawAll(app, canvas):
 
     canvas.create_text(15, app.height-15, text=app.health, anchor="sw")
     canvas.create_text(app.width-15, app.height-15, text=app.ammo, anchor="se")
+
+    if app.drawCrosshair:
+        r = 2
+        canvas.create_rectangle(app.width/2-r, app.height/2-r, app.width/2+r, app.height/2+r,
+            fill="white", width=1)

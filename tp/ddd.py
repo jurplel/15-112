@@ -262,9 +262,8 @@ def clipAllPolysOnScreenEdgePlanes(polysAndColors: np.array, height, width):
         
         for poly in bigPolys:
             bigPolysAndColors.append((poly, color))
-             
-
-    return True, bigPolysAndColors
+    
+    return bigPolysAndColors
 
 
 # Returns tuple of format (isNewPolys, listOfNewPolys)

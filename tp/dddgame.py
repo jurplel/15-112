@@ -40,6 +40,7 @@ def populateMazeWithEnemies(maze, meshes, roomHeight, roomWidth):
     cols = len(maze[0])
     for row in range(rows):
         for col in range(cols):
+            # First room should be safe
             if row == 0 and col == 0:
                 continue
 
@@ -52,8 +53,8 @@ def populateMazeWithEnemies(maze, meshes, roomHeight, roomWidth):
             while successCount < numberOfEnemies:
                 newEnemy = Character(importPly("res/char.ply"))
 
-                # Give the enemy a random position in the room
-                xPos, yPos = random.random(), random.random()
+                # Give the enemy a random position in the room somewhere near the middle
+                xPos, yPos = random.uniform(0.25, 0.75), random.uniform(0.25, 0.75)
                 newEnemy.mesh.translate(roomHeight*(row+xPos), 0, roomWidth*(col+yPos))
 
                 # Set mazeinfo for rendering shortcuts
