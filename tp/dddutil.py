@@ -58,6 +58,16 @@ def getRotationMatrix(degX, degY, degZ):
 
     rotationMatrix = rotXMatrix @ rotYMatrix @ rotZMatrix
     return rotationMatrix
+
+# Just really wanted a variable called xfactor tbh
+# https://www.tutorialspoint.com/computer_graphics/3d_transformation.htm
+def getScaleMatrix(xFactor, yFactor, zFactor):
+    return np.array([
+        [xFactor, 0, 0, 0],
+        [0, yFactor, 0, 0],
+        [0, 0, zFactor, 0],
+        [0, 0, 0,       1]
+    ])
 #
 ## Plane stuff
 #

@@ -93,6 +93,12 @@ class Mesh:
             np.matmul(poly, rotationMatrix, poly)
             np.matmul(norm, rotationMatrix, norm)
         self.calcCollisionParameters()
+    
+    def scale(self, xFactor, yFactor, zFactor):
+        scaleMatrix = getScaleMatrix(xFactor, yFactor, zFactor)
+        for poly, _norm in self.polys:
+            np.matmul(poly, scaleMatrix, poly)
+        self.calcCollisionParameters()
 
     # Returns list of "processed" polys (Ready for drawing)
     # order mostly from https://www.youtube.com/watch?v=ih20l3pJoeU

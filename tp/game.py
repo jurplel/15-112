@@ -18,18 +18,21 @@ def startGame(app):
     app.maze = None
 
     ## maze test
-    app.mazeRows = app.mazeCols = 5
+    app.mazeRows = app.mazeCols = 2
     app.roomHeight = 50
     app.roomWidth = 100
     app.roomDepth = 20
-    app.maze, mazeColors, meshes = createMaze(app.mazeRows, app.mazeCols, app.roomHeight, app.roomWidth, app.roomDepth)
+
+    meshes = []
+    app.maze, enemies = setupMaze(meshes, app.mazeRows, app.mazeCols, app.roomHeight, app.roomWidth, app.roomDepth)
+    
+    # Move the whole maze over a bit to make room for the player
+    # and move it closer to our "ground"
     app.mazeTransform = np.array([-10, -4, -10])
     for i in range(0, len(meshes)):
         meshes[i].translate(app.mazeTransform[0], app.mazeTransform[1], app.mazeTransform[2])
-    
-    enemies = populateMazeWithEnemies(app.maze, mazeColors, meshes, app.roomHeight, app.roomWidth)
-    app.characters.extend(enemies)
 
+    app.characters.extend(enemies)
     app.drawables.extend(meshes)
 
     ## character test

@@ -8,12 +8,13 @@ from ddd import *
 from maze import genMaze
 
 class Character:
-    def __init__(self, mesh: Mesh):
-        mesh.data["ischaracter"] = True
-        # this is just the color of all characters at the moment
-        mesh.color = Color(214, 124, 13)
-        self.mesh = mesh
-        self.health = 30
+    def __init__(self, health):
+        self.mesh = importPly("res/char.ply")
+        self.mesh.data["ischaracter"] = True
+        self.health = health
+        # default color for characters
+        self.mesh.color = Color(214, 124, 13)
+        
 
     def getHit(self, amt):
         if self.health > 0:
@@ -22,6 +23,36 @@ class Character:
         if self.health <= 0:
             self.mesh.visible = False
 
+class EnemyType(Enum):
+    NORMAL = 0
+    ADVANCED = 1
+    BOSS = 2
+
+    def getARandomHealthValue(self):
+        healthRange = (15, 30)
+        if self == EnemyType.ADVANCED:
+            healthRange = (35, 50)
+        elif self == EnemyType.BOSS:
+            healthRange = (80, 100)
+        return random.randint(healthRange[0], healthRange[1])
+
+    def getScaleFactor(self):
+        scale = 1
+        if self == EnemyType.ADVANCED:
+            scale = 1.3
+        elif self == EnemyType.BOSS:
+            scale = 1.75
+        return scale
+
+class Enemy(Character):
+    def __init__(self, enemyType: EnemyType = EnemyType.NORMAL):
+        # Set enemy type parameters
+        super().__init__(enemyType.getARandomHealthValue())
+        self.mesh.scale(enemyType.getScaleFactor(), enemyType.getScaleFactor(), enemyType.getScaleFactor())
+
+    def runAI():
+        pass
+
 
 @dataclass
 class MazeInfo:
@@ -29,10 +60,36 @@ class MazeInfo:
     col: int
     dirs: list
 
+
+def makeRandomEnemyInMazeRoom(maze, meshes, enemies, mazeColors, row, col, roomHeight, roomWidth, enemyType: EnemyType = EnemyType.NORMAL):
+    while True:
+        # Make enemy object with health based on its type (normal, advanced, boss)
+        newEnemy = Enemy(enemyType)
+
+        # Give the enemy a random position in the room somewhere kinda near the middle
+        xPos, yPos = random.uniform(0.3, 0.6), random.uniform(0.25, 0.75)
+        newEnemy.mesh.rotateY(random.uniform(0, 360))
+        
+        newEnemy.mesh.translate(roomHeight*(row+xPos), 0, roomWidth*(col+yPos))
+
+        # Set mazeinfo for rendering shortcuts
+        mazeInfo = MazeInfo(row, col, maze[row][col].dirs, )
+        newEnemy.mesh.data["mazeinfo"] = mazeInfo
+
+        # Set color to opposite of this maze room's color
+        newEnemy.mesh.setColor(mazeColors[row][col].complementary())
+
+        # Make sure its not colliding with anything else
+        if not meshCollidesWithOtherMeshes(newEnemy.mesh, meshes):
+            enemies.append(newEnemy)
+            meshes.append(newEnemy.mesh)
+            return
+
+
 # Returns addedCharacters (meshes is destructively modified)
 def populateMazeWithEnemies(maze, mazeColors, meshes, roomHeight, roomWidth):
-    enemyChance = 70 # 70% chance to have enemies
-    maxNumberOfEnemies = 3
+    enemyChance = 0.7 # 70% chance to have enemies
+    maxNumberOfEnemies = 4
 
     enemies = []
 
@@ -44,35 +101,48 @@ def populateMazeWithEnemies(maze, mazeColors, meshes, roomHeight, roomWidth):
             if row == 0 and col == 0:
                 continue
 
-            willEvenHaveEnemies = random.randint(0, 100)
+            # Last room should be set up manually
+            if row == rows-1 and col == cols-1:
+                continue
+
+            willEvenHaveEnemies = random.random()
             if willEvenHaveEnemies > enemyChance:
                 continue
 
             numberOfEnemies = random.randint(1, maxNumberOfEnemies)
-            successCount = 0
-            while successCount < numberOfEnemies:
-                newEnemy = Character(importPly("res/char.ply"))
 
-                # Give the enemy a random position in the room somewhere near the middle
-                xPos, yPos = random.uniform(0.3, 0.6), random.uniform(0.25, 0.75)
-                newEnemy.mesh.rotateY(random.uniform(0, 360))
-                newEnemy.mesh.translate(roomHeight*(row+xPos), 0, roomWidth*(col+yPos))
+            for enemyNum in range(numberOfEnemies):
+                # in rooms with a lot of enemies, there is a chance for an advanced enemy
+                if enemyNum > 2 and random.random() > enemyChance:
+                    enemyType = EnemyType.ADVANCED
+                else:
+                    enemyType = EnemyType.NORMAL
 
-                # Set mazeinfo for rendering shortcuts
-                mazeInfo = MazeInfo(row, col, maze[row][col].dirs, )
-                newEnemy.mesh.data["mazeinfo"] = mazeInfo
-
-                # Set color to opposite of this maze room's color
-                newEnemy.mesh.setColor(mazeColors[row][col].complementary())
-
-                # Make sure its not colliding with anything else
-                if not meshCollidesWithOtherMeshes(newEnemy.mesh, meshes):
-                    enemies.append(newEnemy)
-                    meshes.append(newEnemy.mesh)
-                    successCount += 1
+                makeRandomEnemyInMazeRoom(maze, meshes, enemies, mazeColors, row, col, roomHeight, roomWidth, enemyType)
 
     return enemies
 
+def setupFinalRoomOfMaze(maze, mazeColors, meshes, roomHeight, roomWidth):
+    enemies = []
+
+    row = len(maze)-1
+    col = len(maze[0])-1
+
+    makeRandomEnemyInMazeRoom(maze, meshes, enemies, mazeColors, row, col, roomHeight, roomWidth, EnemyType.BOSS)
+    return enemies
+
+def setupMaze(meshes, rows, cols, roomHeight, roomWidth, roomDepth):
+    # Make a maze
+    maze, mazeColors, mazeMeshes = createMaze(rows, cols, roomHeight, roomWidth, roomDepth)
+    meshes.extend(mazeMeshes)
+
+    # Set up enemies
+    enemies = populateMazeWithEnemies(maze, mazeColors, meshes, roomHeight, roomWidth)
+    
+    # Set up the final room with boss and stuff
+    enemies.extend(setupFinalRoomOfMaze(maze, mazeColors, meshes, roomHeight, roomWidth))
+    
+    return maze, enemies
 
 def createMaze(rows, cols, roomHeight, roomWidth, roomDepth):
     maze = genMaze(rows, cols)
