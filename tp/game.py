@@ -22,12 +22,12 @@ def startGame(app):
     app.roomHeight = 50
     app.roomWidth = 100
     app.roomDepth = 20
-    app.maze, meshes = createMaze(app.mazeRows, app.mazeCols, app.roomHeight, app.roomWidth, app.roomDepth)
+    app.maze, mazeColors, meshes = createMaze(app.mazeRows, app.mazeCols, app.roomHeight, app.roomWidth, app.roomDepth)
     app.mazeTransform = np.array([-10, -4, -10])
     for i in range(0, len(meshes)):
         meshes[i].translate(app.mazeTransform[0], app.mazeTransform[1], app.mazeTransform[2])
     
-    enemies = populateMazeWithEnemies(app.maze, meshes, app.roomHeight, app.roomWidth)
+    enemies = populateMazeWithEnemies(app.maze, mazeColors, meshes, app.roomHeight, app.roomWidth)
     app.characters.extend(enemies)
 
     app.drawables.extend(meshes)
@@ -42,7 +42,8 @@ def startGame(app):
     app.camDir = np.array([0, 0, 1, 0], dtype=np.float64)
     app.yaw = 0
 
-    app.light = np.array([0, 0, -1, 0])
+    app.light = np.array([1, 0, 1, 0], dtype=np.float64)
+    normVec(app.light)
 
     # some options
     app.fov = 90
@@ -241,7 +242,7 @@ def drawPolygon(app, canvas, polygon, color):
 def redraw3D(app, canvas):
     readyPolys = []
     for mesh in app.drawables:
-        readyPolys.extend(mesh.process(app.cam, app.camDir,
+        readyPolys.extend(mesh.process(app.cam, app.light,
                                         app.height, app.width,
                                         app.projectionMatrix, app.viewMatrix))
 

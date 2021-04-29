@@ -30,7 +30,7 @@ class MazeInfo:
     dirs: list
 
 # Returns addedCharacters (meshes is destructively modified)
-def populateMazeWithEnemies(maze, meshes, roomHeight, roomWidth):
+def populateMazeWithEnemies(maze, mazeColors, meshes, roomHeight, roomWidth):
     enemyChance = 70 # 70% chance to have enemies
     maxNumberOfEnemies = 3
 
@@ -58,8 +58,11 @@ def populateMazeWithEnemies(maze, meshes, roomHeight, roomWidth):
                 newEnemy.mesh.translate(roomHeight*(row+xPos), 0, roomWidth*(col+yPos))
 
                 # Set mazeinfo for rendering shortcuts
-                mazeInfo = MazeInfo(row, col, maze[row][col].dirs)
+                mazeInfo = MazeInfo(row, col, maze[row][col].dirs, )
                 newEnemy.mesh.data["mazeinfo"] = mazeInfo
+
+                # Set color to opposite of this maze room's color
+                newEnemy.mesh.setColor(mazeColors[row][col].complementary())
 
                 # Make sure its not colliding with anything else
                 if not meshCollidesWithOtherMeshes(newEnemy.mesh, meshes):
@@ -72,16 +75,22 @@ def populateMazeWithEnemies(maze, meshes, roomHeight, roomWidth):
 
 def createMaze(rows, cols, roomHeight, roomWidth, roomDepth):
     maze = genMaze(rows, cols)
+    mazeColors = copy.deepcopy(maze)
     meshes = []
     for row in range(rows):
         for col in range(cols):
             room = createRoom(roomHeight, roomWidth, roomDepth, maze[row][col].dirs)
             mazeInfo = MazeInfo(row, col, maze[row][col].dirs)
             list(map(lambda mesh: mesh.translate(roomHeight*row, 0, roomWidth*col), room))
+
+            randomColor = Color(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
             list(map(lambda mesh: modifyDict(mesh.data, "mazeinfo", mazeInfo), room))
+            mazeColors[row][col] = randomColor
+
+            list(map(lambda mesh: mesh.setColor(randomColor), room))
             meshes.extend(room)
 
-    return maze, meshes
+    return maze, mazeColors, meshes
 
 # Returns 4 meshes without doorway, add 2 for each doorway
 def createRoom(height, width, depth, doorways = []):

@@ -33,6 +33,9 @@ class Color:
         else:
             raise TypeError("Must multiply Color by int or float")
 
+    def complementary(self):
+        return Color(255-self.r, 255-self.g, 255-self.b)
+
 class Direction(Enum):
     NORTH = (0, -1)
     EAST = (1, 0)

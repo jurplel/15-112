@@ -40,6 +40,9 @@ class Mesh:
         self._visible = new_value
         self.calcCollisionParameters()
 
+    def setColor(self, color: Color):
+        self.color = color
+
     def calcCollisionParameters(self):
         allX = []
         allY = []
