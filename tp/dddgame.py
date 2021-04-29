@@ -130,7 +130,7 @@ def createDoorway(height, width):
 
     return planes
 
-def createQuadPlane(height, width, maxWidth = 50):
+def createQuadPlane(height, width, maxWidth = 25):
     meshes = []
     if maxWidth != None and width > maxWidth:
         meshes.extend(createQuadPlane(height, width-maxWidth, maxWidth))
