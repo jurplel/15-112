@@ -282,24 +282,26 @@ def paintersAlgorithmMin(polyAndColor):
     return min(poly[:,2])
 
 # Checks all other meshes  
-def rayIntersectsMeshFirst(mesh: Mesh, allMeshes, startPos, direction, rayLength):
+def rayIntersectsMeshFirst(mesh: Mesh, allMeshes, startPos, direction):
+    # If it's not even in the same general direction, skip
     if not isMeshVaguelyInFront(mesh, startPos, direction):
         return False
 
     intersectsMesh, meshIntersectionPoint = rayIntersectsMesh(mesh, 
-                                            startPos, direction, rayLength)
-                
+                                            startPos, direction)
+    # Check for a direct ray intersection                
     if not intersectsMesh:
         return False
 
     intersectionDist = vectorDist(startPos, meshIntersectionPoint)
 
+    # Check ALL other meshes to see if any are in the way
     for mesh in allMeshes:
             if not isMeshVaguelyInFront(mesh, startPos, direction):
                 continue
 
             intersectsOther, otherIntersectionPoint = rayIntersectsMesh(mesh,
-                                                    startPos, direction, rayLength)
+                                                    startPos, direction)
             if intersectsOther and intersectionDist > vectorDist(startPos, otherIntersectionPoint):
                 return False
 
@@ -319,11 +321,11 @@ def isMeshVaguelyInFront(mesh: Mesh, startPos, direction):
     return similarity > 0.6
     
 # Returns tuple: (isIntersecting, intersectionPoint)
-def rayIntersectsMesh(mesh: Mesh, startPos, direction, rayLength):
+def rayIntersectsMesh(mesh: Mesh, startPos, direction):
     # Check each polygon's plane for some reason
     for poly, norm in mesh.polys:
         # Find point of intersection with the plane
-        intersection = linePlaneIntersection(poly[0], norm[0], startPos, direction*rayLength)
+        intersection = linePlaneIntersection(poly[0], norm[0], startPos, startPos+direction)
         
         # If intersection point is within the mesh, then its a hit!
         collides = pointCollision(mesh, intersection)

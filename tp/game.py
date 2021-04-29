@@ -73,7 +73,6 @@ def startGame(app):
     app.weaponDamage = 10
     app.weaponCooldown = 400 # ms
     app.weaponLastShot = time.time()
-    app.weaponRange = 50
 
 def game_sizeChanged(app):
     setNewProjectionMatrix(app)
@@ -146,7 +145,7 @@ def fireGun(app):
     app.weaponLastShot = time.time()
     for character in app.characters:
         hit = rayIntersectsMeshFirst(character.mesh, app.drawables, 
-                                app.cam, app.camDir, app.weaponRange)
+                                app.cam, app.camDir)
         
         # If the character isn't blocked by anything (or close to being blocked by our definition)
         # then the character got hit!
