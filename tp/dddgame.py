@@ -7,6 +7,34 @@ from ply_importer import importPly
 from ddd import *
 from maze import genMaze
 
+def isWithinActiveDistance(vec, playerPos, activeDist = 7):
+    if vectorDist(vec[0:3], playerPos[0:3]) < activeDist:
+        return True
+    return False
+
+def dropDiamond(position, color, meshData):
+    diamond = Drop(importPly("res/diamonti.ply"))
+    diamond.mesh.color = color
+    diamond.mesh.scale(2, 2, 2)
+    diamond.mesh.data["mazeinfo"] = meshData["mazeinfo"]
+    diamond.mesh.translate(position[0], position[1], position[2])
+    return diamond
+    
+class Drop:
+    def __init__(self, mesh, pickupCallback = None):
+        self.mesh = mesh
+        self.pickupCallback = pickupCallback
+        self.rotate = True
+        self.rotSpeed = 45
+
+    def process(self, playerPos, deltaTime):
+        if self.rotate and self.mesh.visible and self.mesh.toBeDrawn:
+            self.mesh.rotateY(self.rotSpeed*deltaTime, True)
+
+        if isWithinActiveDistance(self.mesh.avgVec, playerPos):
+            if self.pickupCallback != None:
+                self.pickupCallback(self.mesh.avgVec)
+
 class Character:
     def __init__(self, health):
         self.mesh = importPly("res/char.ply")
@@ -15,14 +43,23 @@ class Character:
         # default color for characters
         self.mesh.color = Color(214, 124, 13)
         self.lookDir = [0, 0, 1, 0]
+        self.deathCallback = None
+        self.dead = False
         
 
     def getHit(self, amt):
+        avgVec = copy.deepcopy(self.mesh.avgVec)
+        if self.dead:
+            return
+
         if self.health > 0:
             self.health -= amt
             
         if self.health <= 0:
+            self.dead = True
             self.mesh.visible = False
+            if self.deathCallback != None:
+                return self.deathCallback(avgVec, self.mesh.color, self.mesh.data)
 
 class EnemyType(Enum):
     NORMAL = 0
@@ -34,7 +71,7 @@ class EnemyType(Enum):
         if self == EnemyType.ADVANCED:
             healthRange = (35, 50)
         elif self == EnemyType.BOSS:
-            healthRange = (80, 100)
+            healthRange = (120, 120)
         return random.randint(healthRange[0], healthRange[1])
 
     def getScaleFactor(self):
@@ -54,18 +91,19 @@ class EnemyType(Enum):
         return damage
 
     def getMovementSpeed(self):
-        speed = 6
+        speed = 8
         if self == EnemyType.ADVANCED:
-            speed = 8
-        elif self == EnemyType.BOSS:
             speed = 10
+        elif self == EnemyType.BOSS:
+            speed = 12
         return speed
 
 class Enemy(Character):
-    def __init__(self, enemyType: EnemyType = EnemyType.NORMAL):
+    def __init__(self, enemyType: EnemyType = EnemyType.NORMAL, hitCallback = None):
         # Set enemy type parameters
         super().__init__(enemyType.getARandomHealthValue())
         self.mesh.scale(enemyType.getScaleFactor(), enemyType.getScaleFactor(), enemyType.getScaleFactor())
+        self.hitCallback = hitCallback
         self.movementSpeed = enemyType.getMovementSpeed()
         self.dmgAmount = enemyType.getDamageAmount()
 
@@ -102,13 +140,14 @@ class Enemy(Character):
             self.mesh.translate(-toPlayer[0], 0, -toPlayer[2])
             
 
-    def runAI(self, playerPos, deltaTime, onHit):
+    def runAI(self, playerPos, deltaTime):
         self.facePoint(playerPos)
 
         self.moveTowards(playerPos, deltaTime*self.movementSpeed)
 
-        if vectorDist(self.mesh.avgVec, playerPos[0:3]) < 8:
-            onHit(self.dmgAmount)
+        if isWithinActiveDistance(self.mesh.avgVec, playerPos):
+            if self.hitCallback != None:
+                self.hitCallback(self.dmgAmount)
 
 
 @dataclass
@@ -121,6 +160,7 @@ class MazeInfo:
 def makeRandomEnemyInMazeRoom(maze, meshes, enemies, mazeColors, row, col, roomHeight, roomWidth, enemyType: EnemyType = EnemyType.NORMAL):
     while True:
         # Make enemy object with health based on its type (normal, advanced, boss)
+        print(enemyType)
         newEnemy = Enemy(enemyType)
 
         # Give the enemy a random position in the room somewhere kinda near the middle
@@ -189,6 +229,7 @@ def setupFinalRoomOfMaze(maze, mazeColors, meshes, roomHeight, roomWidth):
     col = len(maze[0])-1
 
     makeRandomEnemyInMazeRoom(maze, meshes, enemies, mazeColors, row, col, roomHeight, roomWidth, EnemyType.BOSS)
+    enemies[-1].deathCallback = dropDiamond
     return enemies
 
 def setupMaze(meshes, rows, cols, roomHeight, roomWidth, roomDepth):

@@ -13,7 +13,8 @@ def setNewProjectionMatrix(app):
 
 def startGame(app):
     app.drawables = []
-    app.characters = []
+    app.enemies = []
+    app.drops = []
     
     app.maze = None
 
@@ -32,13 +33,11 @@ def startGame(app):
     for i in range(0, len(meshes)):
         meshes[i].translate(app.mazeTransform[0], app.mazeTransform[1], app.mazeTransform[2])
 
-    app.characters.extend(enemies)
+    app.enemies.extend(enemies)
     app.drawables.extend(meshes)
 
-    ## character test
-    # app.characters.append(Character(ply_importer.importPly("res/char.ply")))
-    # app.drawables.append(app.characters[-1].mesh)
-    # app.drawables[-1].translate(4, -3, 4)
+    for enemy in app.enemies:
+        enemy.hitCallback = lambda dmg: getHurt(app, dmg)
 
     # initialize player/cam coordinates
     app.cam = np.array([0, 0, 0, 0], dtype=np.float64)
@@ -143,15 +142,20 @@ def fireGun(app):
         return
 
     app.weaponLastShot = time.time()
-    for character in app.characters:
-        hit = rayIntersectsMeshFirst(character.mesh, app.drawables, 
+    for enemy in app.enemies:
+        hit = rayIntersectsMeshFirst(enemy.mesh, app.drawables, 
                                 app.cam, app.camDir)
         
-        # If the character isn't blocked by anything (or close to being blocked by our definition)
-        # then the character got hit!
+        # If the enemy isn't blocked by anything (or close to being blocked by our definition)
+        # then the enemy got hit!
         if hit:
-            character.getHit(app.weaponDamage)
-            print("hit", character.health)
+            drop = enemy.getHit(app.weaponDamage)
+            if drop != None:
+                drop.pickupCallback = lambda pos: pickupDiamond(app, pos)
+                app.drops.append(drop)
+                app.drawables.append(drop.mesh)
+
+            print("hit!", enemy.health)
             break
         
 
@@ -190,6 +194,9 @@ def processKeys(app, deltaTime):
         if "space" in app.heldKeys:
             fireGun(app)
 
+def pickupDiamond(app, pos):
+    pass
+
 def getHurt(app, amount):
     sinceLastHurt = time.time() - app.lastHurt
     if sinceLastHurt*1000 < app.hurtCooldown:
@@ -204,11 +211,17 @@ def game_timerFired(app):
 
     processKeys(app, deltaTime)
 
-    for char in app.characters:
+    for char in app.enemies:
         mazeInfo = char.mesh.data["mazeinfo"]
         charRoom = (mazeInfo.row, mazeInfo.col)
         if charRoom == app.currentRoom:
-            char.runAI(app.cam, deltaTime, lambda dmg: getHurt(app, dmg))
+            char.runAI(app.cam, deltaTime)
+
+    for drop in app.drops:
+        mazeInfo = drop.mesh.data["mazeinfo"]
+        dropRoom = (mazeInfo.row, mazeInfo.col)
+        if dropRoom == app.currentRoom:
+            drop.process(app.cam, deltaTime)
 
     app.lastTimerTime = time.time()
 
