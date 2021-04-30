@@ -1,5 +1,7 @@
 from enum import Enum
 
+import math
+
 # from https://www.cs.cmu.edu/~112/notes/notes-2d-lists.html#creating2dLists
 def make2dList(rows, cols, val = None):
     return [ ([val] * cols) for row in range(rows) ]
@@ -17,6 +19,23 @@ def rgbToHex(r, g, b):
     g = clamp(int(g), 0, 255)
     b = clamp(int(b), 0, 255)
     return f'#{r:02x}{g:02x}{b:02x}'
+
+def normAngle(a, deg = False):
+    if deg:
+        while a > 180:
+            a -= 360
+
+        while a < -180:
+            a += 360
+    else:
+        while a > math.pi:
+            a -= math.pi*2
+
+        while a < -math.pi:
+            a += math.pi*2
+
+    return a
+
 
 class Color:
     def __init__(self, r, g, b):

@@ -80,19 +80,11 @@ def startGame(app):
     app.weaponCooldown = 400 # ms
     app.weaponLastShot = time.time()
 
+    app.hurtCooldown = 400
+    app.lastHurt = time.time()
+
 def game_sizeChanged(app):
     setNewProjectionMatrix(app)
-
-def doesCamCollide(app):
-    # -1 and +1 is basically the camera/player's imaginary hitbox
-    for mesh in app.drawables:
-        collides = (mesh.minX-1 <= app.cam[0] <= mesh.maxX+1 and 
-                    mesh.minY-1 <= app.cam[1] <= mesh.maxY+1 and 
-                    mesh.minZ-1 <= app.cam[2] <= mesh.maxZ+1)
-        if collides:
-            return True
-
-    return False
 
 def setCurrentRoom(app):
     if app.maze == None:
@@ -198,10 +190,26 @@ def processKeys(app, deltaTime):
         if "space" in app.heldKeys:
             fireGun(app)
 
+def getHurt(app, amount):
+    sinceLastHurt = time.time() - app.lastHurt
+    if sinceLastHurt*1000 < app.hurtCooldown:
+        return
+
+    app.health -= amount
+
+    app.lastHurt = time.time()
 
 def game_timerFired(app):
     deltaTime = time.time() - app.lastTimerTime
+
     processKeys(app, deltaTime)
+
+    for char in app.characters:
+        mazeInfo = char.mesh.data["mazeinfo"]
+        charRoom = (mazeInfo.row, mazeInfo.col)
+        if charRoom == app.currentRoom:
+            char.runAI(app.cam, deltaTime, lambda dmg: getHurt(app, dmg))
+
     app.lastTimerTime = time.time()
 
 

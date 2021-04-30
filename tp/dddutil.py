@@ -88,7 +88,7 @@ def pointAndPlaneDist(point: np.array, plane: np.array, planeNorm: np.array):
 # https://tutorial.math.lamar.edu/classes/calciii/eqnsofplanes.aspx
 def closestPointOnPlane(point: np.array, plane: np.array, planeNorm: np.array):
     planeScalar = sum(np.multiply(plane, planeNorm))
-    pointOnPlane = (point*planeScalar)/(vectorMagnitude(point)**2)
+    pointOnPlane = (point*planeScalar)/(vecMagnitude(point)**2)
     return pointOnPlane
 
 #
@@ -97,15 +97,15 @@ def closestPointOnPlane(point: np.array, plane: np.array, planeNorm: np.array):
 
 def vectorDist(vec0: np.array, vec1: np.array):
     subbed = vec1-vec0
-    total = 0
-    for term in subbed:
-        total += term**2
-    
-    return math.sqrt(total)
+    return vecMagnitude(subbed)
 
 # Used instead of built in np.linalg.norm for performance reasons
 def normVec(vec: np.array):
-    vec /= vectorMagnitude(vec)
+    vec /= vecMagnitude(vec)
 
-def vectorMagnitude(vec: np.array):
-    return math.sqrt(vec[0]**2+vec[1]**2+vec[2]**2)
+def vecMagnitude(vec: np.array):
+    total = 0
+    for term in vec:
+        total += term**2
+    
+    return math.sqrt(total)

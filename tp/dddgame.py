@@ -14,6 +14,7 @@ class Character:
         self.health = health
         # default color for characters
         self.mesh.color = Color(214, 124, 13)
+        self.lookDir = [0, 0, 1, 0]
         
 
     def getHit(self, amt):
@@ -44,14 +45,70 @@ class EnemyType(Enum):
             scale = 1.75
         return scale
 
+    def getDamageAmount(self):
+        damage = 10
+        if self == EnemyType.ADVANCED:
+            damage = 15
+        elif self == EnemyType.BOSS:
+            damage = 20
+        return damage
+
+    def getMovementSpeed(self):
+        speed = 6
+        if self == EnemyType.ADVANCED:
+            speed = 8
+        elif self == EnemyType.BOSS:
+            speed = 10
+        return speed
+
 class Enemy(Character):
     def __init__(self, enemyType: EnemyType = EnemyType.NORMAL):
         # Set enemy type parameters
         super().__init__(enemyType.getARandomHealthValue())
         self.mesh.scale(enemyType.getScaleFactor(), enemyType.getScaleFactor(), enemyType.getScaleFactor())
+        self.movementSpeed = enemyType.getMovementSpeed()
+        self.dmgAmount = enemyType.getDamageAmount()
 
-    def runAI():
-        pass
+    # https://math.stackexchange.com/questions/654315/how-to-convert-a-dot-product-of-two-vectors-to-the-angle-between-the-vectors
+    # second answer for formula for angle diff to 2pi
+    def facePoint(self, point):
+        # 0:3:2 serves to skip the Y coordinate
+        toPoint = point[0:3:2]-self.mesh.avgVec[0:3:2]
+        
+        lookDir2D = self.lookDir[0:3:2]
+        normVec(toPoint)
+        
+        dp = np.dot(lookDir2D, toPoint)
+        
+        angleDiff = np.arctan2(lookDir2D[0], lookDir2D[1]) - np.arctan2(toPoint[0], toPoint[1])
+        
+        angleDiff = normAngle(math.degrees(angleDiff), True)
+        if abs(angleDiff) < 1:
+            return
+
+        self.mesh.rotateY(angleDiff, True)
+
+        self.lookDir = self.lookDir @ getYRotationMatrix(angleDiff)
+        
+    def moveTowards(self, point, speed):
+        toPlayer = point[0:3]-self.mesh.avgVec
+
+        normVec(toPlayer)
+        toPlayer *= speed
+
+        self.mesh.translate(toPlayer[0], 0, toPlayer[2])
+
+        if pointCollision(self.mesh, point[0:3], 2):
+            self.mesh.translate(-toPlayer[0], 0, -toPlayer[2])
+            
+
+    def runAI(self, playerPos, deltaTime, onHit):
+        self.facePoint(playerPos)
+
+        self.moveTowards(playerPos, deltaTime*self.movementSpeed)
+
+        if vectorDist(self.mesh.avgVec, playerPos[0:3]) < 8:
+            onHit(self.dmgAmount)
 
 
 @dataclass
@@ -68,7 +125,10 @@ def makeRandomEnemyInMazeRoom(maze, meshes, enemies, mazeColors, row, col, roomH
 
         # Give the enemy a random position in the room somewhere kinda near the middle
         xPos, yPos = random.uniform(0.3, 0.6), random.uniform(0.25, 0.75)
-        newEnemy.mesh.rotateY(random.uniform(0, 360))
+
+        a = random.uniform(0, 360)
+        newEnemy.mesh.rotateY(a)
+        newEnemy.lookDir = newEnemy.lookDir @ getYRotationMatrix(a)
         
         newEnemy.mesh.translate(roomHeight*(row+xPos), 0, roomWidth*(col+yPos))
 

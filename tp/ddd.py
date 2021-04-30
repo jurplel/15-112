@@ -19,6 +19,7 @@ class Mesh:
         self.toBeDrawn = True
         self.data = dict()
         self.calcCollisionParameters()
+        self.translatedPoint = np.array([0, 0, 0, 1], dtype=np.float64)
 
     # https://www.geeksforgeeks.org/getter-and-setter-in-python/
 
@@ -66,32 +67,63 @@ class Mesh:
         self.maxZ = max(allZ)
         self.avgZ = sum(allZ)/len(allZ)
         self.minZ = min(allZ)
+        self.avgVec = np.array([self.avgX, self.avgY, self.avgZ])
 
     def translate(self, x, y, z):
         translationMatrix = getTranslationMatrix(x, y, z)
+        self.translatedPoint += np.array([x, y, z, 0])
         for poly, _norm in self.polys:
             np.matmul(poly, translationMatrix, poly)
         self.calcCollisionParameters()
 
-    def rotateX(self, degX):
+    def rotateX(self, degX, relative = False):
         rotationMatrix = getXRotationMatrix(degX)
+        
+        if relative:
+            copiedPoint = copy.deepcopy(self.translatedPoint)
+            self.translate(-copiedPoint[0], -copiedPoint[1], -copiedPoint[2])
+
         for poly, norm in self.polys:
             np.matmul(poly, rotationMatrix, poly)
             np.matmul(norm, rotationMatrix, norm)
+
+        if relative:
+            self.translate(copiedPoint[0], copiedPoint[1], copiedPoint[2])
+
+        
         self.calcCollisionParameters()
 
-    def rotateY(self, degY):
+    def rotateY(self, degY, relative = False):
         rotationMatrix = getYRotationMatrix(degY)
+
+        if relative:
+            copiedPoint = copy.deepcopy(self.translatedPoint)
+            self.translate(-copiedPoint[0], -copiedPoint[1], -copiedPoint[2])
+
         for poly, norm in self.polys:
             np.matmul(poly, rotationMatrix, poly)
             np.matmul(norm, rotationMatrix, norm)
+
+        if relative:
+            self.translate(copiedPoint[0], copiedPoint[1], copiedPoint[2])
+        
         self.calcCollisionParameters()
 
-    def rotateZ(self, degZ):
+    def rotateZ(self, degZ, relative = False):
         rotationMatrix = getZRotationMatrix(degZ)
+
+        if relative:
+            copiedPoint = copy.deepcopy(self.translatedPoint)
+            self.translate(-copiedPoint[0], -copiedPoint[1], -copiedPoint[2])
+
         for poly, norm in self.polys:
             np.matmul(poly, rotationMatrix, poly)
             np.matmul(norm, rotationMatrix, norm)
+
+        if relative:
+            self.translate(copiedPoint[0], copiedPoint[1], copiedPoint[2])
+
+        
         self.calcCollisionParameters()
     
     def scale(self, xFactor, yFactor, zFactor):
