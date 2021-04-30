@@ -77,7 +77,6 @@ def startGame(app):
 
     # player character parameters
     app.health = 100
-    app.ammo = 50
     app.weaponDamage = 10
     app.weaponCooldown = 400 # ms
     app.weaponLastShot = time.time()
@@ -304,14 +303,16 @@ def redraw3D(app, canvas):
     [drawPolygon(app, canvas, x[0], x[1]) for x in readyPolys]
 
 def drawHud(app, canvas):
-    canvas.create_text(app.hudMargin, app.height-app.hudMargin, text=app.health, anchor="sw")
-    canvas.create_text(app.width-app.hudMargin, app.height-app.hudMargin, text=app.ammo, anchor="se")
+    canvas.create_rectangle(0, app.height, 150, app.height-app.hudMargin*4, fill="white", outline="black")
+    canvas.create_text(app.hudMargin, app.height-app.hudMargin, text=f"Health: {app.health}", anchor="sw", font="Ubuntu 12 italic")
 
     # Current pos HUD
-    canvas.create_text(app.hudMargin, app.height-app.hudMargin*3, 
+    canvas.create_text(app.hudMargin, app.height-app.hudMargin*2, 
                         text=f"Row {app.currentRoom[0]+1}/{app.mazeRows}, " +
                              f"Col {app.currentRoom[1]+1}/{app.mazeCols}",
-                         anchor="sw")
+                         anchor="sw", font="Ubuntu 12 italic")
+
+
 
 
     if app.drawCrosshair:
