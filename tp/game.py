@@ -72,6 +72,9 @@ def startGame(app):
 
     setCurrentRoom(app)
 
+    app.won = None
+    app.lost = None
+
     # player character parameters
     app.health = 100
     app.ammo = 50
@@ -195,19 +198,34 @@ def processKeys(app, deltaTime):
             fireGun(app)
 
 def pickupDiamond(app, pos):
-    pass
+    if not app.won:
+        app.won = time.time()+3
 
 def getHurt(app, amount):
+    if app.health <= 0:
+        return
+
     sinceLastHurt = time.time() - app.lastHurt
     if sinceLastHurt*1000 < app.hurtCooldown:
         return
 
     app.health -= amount
 
+    if app.health <= 0:
+        app.lost = time.time()+3
+
     app.lastHurt = time.time()
 
 def game_timerFired(app):
     deltaTime = time.time() - app.lastTimerTime
+
+    if app.won and app.won-time.time() < 0:
+        app.changeMode(app, "menu")
+
+    if app.lost:
+        if app.lost-time.time() < 0:
+            app.changeMode(app, "menu")
+        return
 
     processKeys(app, deltaTime)
 
@@ -295,10 +313,22 @@ def drawHud(app, canvas):
                              f"Col {app.currentRoom[1]+1}/{app.mazeCols}",
                          anchor="sw")
 
+
     if app.drawCrosshair:
         r = 2
         canvas.create_rectangle(app.width/2-r, app.height/2-r, app.width/2+r, app.height/2+r,
             fill="white", width=1)
+
+    if app.won or app.lost:
+        text = "You win!"
+        if app.lost:
+            text = "You died."
+        
+        ry = 20
+        rx = 70
+        canvas.create_rectangle(app.width/2-rx, app.height/2-ry, app.width/2+rx, app.height/2+ry, fill="white", outline="black")
+        canvas.create_text(app.width/2, app.height/2, 
+                            text=text, font="Ubuntu 24 italic")
 
 def game_redrawAll(app, canvas):
     if app.drawFps:

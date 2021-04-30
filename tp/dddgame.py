@@ -160,7 +160,6 @@ class MazeInfo:
 def makeRandomEnemyInMazeRoom(maze, meshes, enemies, mazeColors, row, col, roomHeight, roomWidth, enemyType: EnemyType = EnemyType.NORMAL):
     while True:
         # Make enemy object with health based on its type (normal, advanced, boss)
-        print(enemyType)
         newEnemy = Enemy(enemyType)
 
         # Give the enemy a random position in the room somewhere kinda near the middle
