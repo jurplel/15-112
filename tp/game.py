@@ -19,7 +19,8 @@ def startGame(app):
     app.maze = None
 
     ## maze test
-    app.mazeRows = app.mazeCols = 5
+    app.mazeRows = random.randint(3, 6)
+    app.mazeCols = random.randint(3, 6)
     app.roomHeight = 50
     app.roomWidth = 100
     app.roomDepth = 20
@@ -76,6 +77,11 @@ def startGame(app):
     app.msgTime = time.time()
     app.msgReturnToMenu = False
     app.msgMovementAllowed = True
+
+    app.lastEnemyHitName = None
+    app.lastEnemyHitHealth = None
+    app.lastEnemyHitMaxHealth = None
+    app.lastEnemyHitTime = time.time()
 
     # player character parameters
     app.health = 100
@@ -163,7 +169,11 @@ def fireGun(app):
                 app.drops.append(drop)
                 app.drawables.append(drop.mesh)
 
-            print("hit!", enemy.health)
+            # Set damage indicator variables
+            app.lastEnemyHitName = enemy.name
+            app.lastEnemyHitHealth = enemy.health
+            app.lastEnemyHitMaxHealth = enemy.maxHealth
+            app.lastEnemyHitTime = time.time()
             break
         
 
@@ -236,6 +246,12 @@ def game_timerFired(app):
         app.msg = None
         if app.msgReturnToMenu:
             app.changeMode(app, "menu")
+
+    damageIndicatorCooldown = 3
+    if app.lastEnemyHitTime+damageIndicatorCooldown < time.time():
+        app.lastEnemyHitName = None
+        app.lastEnemyHitHealth = None
+        app.lastEnemyHitMaxHealth = None
 
     if not app.msgMovementAllowed:
         return
@@ -316,8 +332,10 @@ def redraw3D(app, canvas):
     # List comprehensions are potentially faster than for loops
     [drawPolygon(app, canvas, x[0], x[1]) for x in readyPolys]
 
+# stipple from https://stackoverflow.com/questions/15468327/how-can-i-vary-a-shapes-alpha-with-tkinter
 def drawHud(app, canvas):
-    canvas.create_rectangle(0, app.height, 150, app.height-app.hudMargin*4, fill="white", outline="black")
+    canvas.create_rectangle(0, app.height, 150, app.height-app.hudMargin*4, fill="white", outline="black", stipple="gray50")
+    # Health HUD
     canvas.create_text(app.hudMargin, app.height-app.hudMargin, text=f"Health: {app.health}", anchor="sw", font="Ubuntu 12 italic")
 
     # Current pos HUD
@@ -326,7 +344,14 @@ def drawHud(app, canvas):
                              f"Col {app.currentRoom[1]+1}/{app.mazeCols}",
                          anchor="sw", font="Ubuntu 12 italic")
 
+    # Damage indicator
+    if app.lastEnemyHitName != None:
+        canvas.create_rectangle(app.width, app.height, app.width-150, app.height-app.hudMargin*4, fill="white", outline="black", stipple="gray50")
 
+        canvas.create_text(app.width-app.hudMargin, app.height-app.hudMargin, 
+                            text=f"Last hit: {app.lastEnemyHitName}\n" +
+                                f"HP: {app.lastEnemyHitHealth}/{app.lastEnemyHitMaxHealth}",
+                            anchor="se", font="Ubuntu 12 italic")
 
 
     if app.drawCrosshair:
@@ -345,7 +370,8 @@ def drawHud(app, canvas):
 
         rx = 10
         rx *= longestLineLen
-        canvas.create_rectangle(app.width/2-rx, app.height/2-ry, app.width/2+rx, app.height/2+ry, fill="white", outline="black")
+
+        canvas.create_rectangle(app.width/2-rx, app.height/2-ry, app.width/2+rx, app.height/2+ry, fill="white", outline="black", stipple="gray50")
         canvas.create_text(app.width/2, app.height/2, 
                             text=app.msg, font="Ubuntu 24 italic")
 

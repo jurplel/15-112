@@ -40,6 +40,7 @@ class Character:
         self.mesh = importPly("res/char.ply")
         self.mesh.data["ischaracter"] = True
         self.health = health
+        self.maxHealth = health
         # default color for characters
         self.mesh.color = Color(214, 124, 13)
         self.lookDir = [0, 0, 1, 0]
@@ -98,14 +99,25 @@ class EnemyType(Enum):
             speed = 12
         return speed
 
+    def getName(self):
+        name = "Enemy"
+        if self == EnemyType.ADVANCED:
+            name = "Advanced Enemy"
+        elif self == EnemyType.BOSS:
+            name = "The Boss"
+        return name
+            
 class Enemy(Character):
     def __init__(self, enemyType: EnemyType = EnemyType.NORMAL, hitCallback = None):
         # Set enemy type parameters
         super().__init__(enemyType.getARandomHealthValue())
         self.mesh.scale(enemyType.getScaleFactor(), enemyType.getScaleFactor(), enemyType.getScaleFactor())
+
         self.hitCallback = hitCallback
+
         self.movementSpeed = enemyType.getMovementSpeed()
         self.dmgAmount = enemyType.getDamageAmount()
+        self.name = enemyType.getName()
 
     # https://math.stackexchange.com/questions/654315/how-to-convert-a-dot-product-of-two-vectors-to-the-angle-between-the-vectors
     # second answer for formula for angle diff to 2pi
