@@ -4,6 +4,7 @@ import math, time
 import ply_importer
 
 from dddgame import *
+from maze import drawMazeMap
 
 def setNewViewMatrix(app):
     app.viewMatrix = getViewMatrix(app.cam, app.cam + app.camDir)
@@ -93,7 +94,7 @@ def startGame(app):
     app.lastHurt = time.time()
 
     showMsg(app, "Your mission:\n" +
-                 f"Elliminate the boss at row {app.mazeRows} and col {app.mazeCols}\n" +
+                 f"Elliminate the boss at the bottom right corner\n" +
                  "and recover the diamond.")
 
 def game_sizeChanged(app):
@@ -302,7 +303,6 @@ def game_timerFired(app):
 #                 app.canvasImage.put(color, (ix, iy))
 
 
-
 def drawPolygon(app, canvas, polygon, color):
     v0 = polygon[0]
     v1 = polygon[1]
@@ -332,15 +332,26 @@ def redraw3D(app, canvas):
 
 # stipple from https://stackoverflow.com/questions/15468327/how-can-i-vary-a-shapes-alpha-with-tkinter
 def drawHud(app, canvas):
-    canvas.create_rectangle(0, app.height, 150, app.height-app.hudMargin*4, fill="white", outline="black", stipple="gray50")
     # Health HUD
-    canvas.create_text(app.hudMargin, app.height-app.hudMargin, text=f"Health: {app.health}", anchor="sw", font="Ubuntu 12 italic")
+    healthX = app.hudMargin
+    healthY = app.height-app.hudMargin
+    healthW = 200
+    healthH = 20
+
+    # minimap margin calculation for making the healthbar match:
+    marginWidth = (((healthY-healthH-1)-(healthY-healthW))/app.mazeCols)/8
+
+    canvas.create_rectangle(healthX+marginWidth/2, healthY-healthH, healthX+healthW-marginWidth/2, healthY)
+    canvas.create_rectangle(healthX+marginWidth/2, healthY-healthH, healthX+healthW*(app.health/100)-marginWidth/2, healthY, fill="lawn green", width=marginWidth, outline="gray25")
+
+    minimapHeight = 400
+    drawMazeMap(app, canvas, healthX, healthY-healthW, healthX+healthW, healthY-healthH-1, "gray60", "gray25", app.currentRoom, "lawn green")
 
     # Current pos HUD
-    canvas.create_text(app.hudMargin, app.height-app.hudMargin*2, 
-                        text=f"Row {app.currentRoom[0]+1}/{app.mazeRows}, " +
-                             f"Col {app.currentRoom[1]+1}/{app.mazeCols}",
-                         anchor="sw", font="Ubuntu 12 italic")
+    # canvas.create_text(app.hudMargin, app.height-app.hudMargin*2, 
+    #                     text=f"Row {app.currentRoom[0]+1}/{app.mazeRows}, " +
+    #                          f"Col {app.currentRoom[1]+1}/{app.mazeCols}",
+    #                      anchor="sw", font="Ubuntu 12 italic")
 
     # Damage indicator
     if app.lastEnemyHitName != None:
