@@ -126,7 +126,8 @@ def game_keyPressed(app, event):
 
 def game_keyReleased(app, event):
     key = event.key.lower()
-    app.heldKeys.remove(key)
+    if key in app.heldKeys:
+        app.heldKeys.remove(key)
 
 # drz/drx is delta relative z/x
 def relativeCamMove(app, drz, drx):
@@ -144,7 +145,6 @@ def relativeCamMove(app, drz, drx):
 
     setCurrentRoom(app)
 
-    
 def recalculateCamDir(app):
     app.camDir = np.array([0, 0, 1, 0]) @ getYRotationMatrix(app.yaw)
 
@@ -176,8 +176,6 @@ def fireGun(app):
             app.lastEnemyHitTime = time.time()
             break
         
-
-
 def processKeys(app, deltaTime):
     speed = app.movementSpeed*deltaTime
     if app.heldKeys:
