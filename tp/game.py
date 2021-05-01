@@ -19,7 +19,7 @@ def startGame(app):
     app.maze = None
 
     ## maze test
-    app.mazeRows = app.mazeCols = 2
+    app.mazeRows = app.mazeCols = 5
     app.roomHeight = 50
     app.roomWidth = 100
     app.roomDepth = 20
@@ -72,8 +72,10 @@ def startGame(app):
 
     setCurrentRoom(app)
 
-    app.won = None
-    app.lost = None
+    app.msg = None
+    app.msgTime = time.time()
+    app.msgReturnToMenu = False
+    app.msgMovementAllowed = True
 
     # player character parameters
     app.health = 100
@@ -83,6 +85,10 @@ def startGame(app):
 
     app.hurtCooldown = 400
     app.lastHurt = time.time()
+
+    showMsg(app, "Your mission:\n" +
+                 f"Elliminate the boss at row {app.mazeRows} and col {app.mazeCols}\n" +
+                 "and recover the diamond.")
 
 def game_sizeChanged(app):
     setNewProjectionMatrix(app)
@@ -196,9 +202,17 @@ def processKeys(app, deltaTime):
         if "space" in app.heldKeys:
             fireGun(app)
 
+def showMsg(app, msg, returnToMenu = False, allowMovement = True, delay = 3):
+    if app.msg != None:
+        return
+
+    app.msg = msg
+    app.msgTime = time.time()+delay
+    app.msgReturnToMenu = returnToMenu
+    app.msgMovementAllowed = allowMovement
+
 def pickupDiamond(app, pos):
-    if not app.won:
-        app.won = time.time()+3
+    showMsg(app, "You win!", True)
 
 def getHurt(app, amount):
     if app.health <= 0:
@@ -211,19 +225,19 @@ def getHurt(app, amount):
     app.health -= amount
 
     if app.health <= 0:
-        app.lost = time.time()+3
+        showMsg(app, "You died.", True, False)
 
     app.lastHurt = time.time()
 
 def game_timerFired(app):
     deltaTime = time.time() - app.lastTimerTime
 
-    if app.won and app.won-time.time() < 0:
-        app.changeMode(app, "menu")
-
-    if app.lost:
-        if app.lost-time.time() < 0:
+    if app.msg != None and app.msgTime-time.time() < 0:
+        app.msg = None
+        if app.msgReturnToMenu:
             app.changeMode(app, "menu")
+
+    if not app.msgMovementAllowed:
         return
 
     processKeys(app, deltaTime)
@@ -320,16 +334,20 @@ def drawHud(app, canvas):
         canvas.create_rectangle(app.width/2-r, app.height/2-r, app.width/2+r, app.height/2+r,
             fill="white", width=1)
 
-    if app.won or app.lost:
-        text = "You win!"
-        if app.lost:
-            text = "You died."
-        
+    if app.msg:
         ry = 20
-        rx = 70
+        ry *= len(app.msg.splitlines())
+        longestLineLen = 0
+
+        for line in app.msg.splitlines():
+            if len(line) > longestLineLen:
+                longestLineLen = len(line)
+
+        rx = 10
+        rx *= longestLineLen
         canvas.create_rectangle(app.width/2-rx, app.height/2-ry, app.width/2+rx, app.height/2+ry, fill="white", outline="black")
         canvas.create_text(app.width/2, app.height/2, 
-                            text=text, font="Ubuntu 24 italic")
+                            text=app.msg, font="Ubuntu 24 italic")
 
 def game_redrawAll(app, canvas):
     if app.drawFps:
