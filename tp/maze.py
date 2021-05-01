@@ -105,5 +105,5 @@ def drawMazeMap(app, canvas, tx0, ty0, tx1, ty1, color, bgcolor, currentRoom, ma
                 canvas.create_rectangle(tx0+mx0, ty0+my0, tx0+mx1, ty0+my1, width=0, fill=color)
 
             if currentRoom == (row, col):
-                r = 15
+                r = 10
                 canvas.create_oval(tx0+x0+r, ty0+y0+r, tx0+x1-r, ty0+y1-r, fill=markerColor)

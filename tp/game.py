@@ -20,8 +20,7 @@ def startGame(app):
     app.maze = None
 
     ## maze test
-    app.mazeRows = random.randint(3, 6)
-    app.mazeCols = random.randint(3, 6)
+    app.mazeRows = app.mazeCols = random.randint(3, 6)
     app.roomHeight = 50
     app.roomWidth = 100
     app.roomDepth = 20
@@ -164,6 +163,11 @@ def fireGun(app):
         # If the enemy isn't blocked by anything (or close to being blocked by our definition)
         # then the enemy got hit!
         if hit:
+            # check if its in the current room too!
+            mazeInfo = enemy.mesh.data["mazeinfo"]
+            if not (mazeInfo.row, mazeInfo.col) == app.currentRoom:
+                return
+
             drop = enemy.getHit(app.weaponDamage)
             if drop != None:
                 drop.pickupCallback = lambda pos: pickupDiamond(app, pos)
