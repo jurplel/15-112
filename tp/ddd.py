@@ -298,22 +298,23 @@ def clipPolyOnPlane(poly: np.array, plane: np.array, planeNorm: np.array):
         vec1 = poly[notClipped.pop()]
         vec2 = poly[notClipped.pop()]
 
-        intersection1 = linePlaneIntersection(plane, planeNorm, vec0[0:3], vec1[0:3])
-        intersection2 = linePlaneIntersection(plane, planeNorm, vec0[0:3], vec2[0:3])
+        isInt1, intersection1 = linePlaneIntersection(plane, planeNorm, vec0[0:3], vec1[0:3])
+        isInt2, intersection2 = linePlaneIntersection(plane, planeNorm, vec0[0:3], vec2[0:3])
+        if isInt1 and isInt2:
+            np.put(vec0, [0, 1, 2], intersection1) # Replace 0, 1, and 2 indices
+            newPolys.append(np.array([vec0, vec2, np.append(intersection2, 1)]))
 
-        np.put(vec0, [0, 1, 2], intersection1) # Replace 0, 1, and 2 indices
-        newPolys.append(np.array([vec0, vec2, np.append(intersection2, 1)]))
     # If two verts are too close to the camera, modify the current polygon
     elif len(clipped) == 2:
         vec0 = poly[clipped[0]]
         vec1 = poly[clipped[1]]
         vec2 = poly[notClipped.pop()]
 
-        intersection1 = linePlaneIntersection(plane, planeNorm, vec0[0:3], vec2[0:3])
-        intersection2 = linePlaneIntersection(plane, planeNorm, vec1[0:3], vec2[0:3])
-
-        np.put(vec0, [0, 1, 2], intersection1) # Replace 0, 1, and 2 indices
-        np.put(vec1, [0, 1, 2], intersection2) # Replace 0, 1, and 2 indices
+        isInt1, intersection1 = linePlaneIntersection(plane, planeNorm, vec0[0:3], vec2[0:3])
+        isInt2, intersection2 = linePlaneIntersection(plane, planeNorm, vec1[0:3], vec2[0:3])
+        if isInt1 and isInt2:
+            np.put(vec0, [0, 1, 2], intersection1) # Replace 0, 1, and 2 indices
+            np.put(vec1, [0, 1, 2], intersection2) # Replace 0, 1, and 2 indices
 
     return (True, newPolys)
 
@@ -383,12 +384,13 @@ def rayIntersectsMesh(mesh: Mesh, startPos, direction):
     # Check each polygon's plane for some reason
     for poly, norm in mesh.polys:
         # Find point of intersection with the plane
-        intersection = linePlaneIntersection(poly[0], norm[0], startPos, startPos+direction)
+        isInt, intersection = linePlaneIntersection(poly[0], norm[0], startPos, startPos+direction)
         
-        # If intersection point is within the mesh, then its a hit!
-        collides = pointCollision(mesh, intersection)
-        if collides:
-            return (True, intersection)
+        if isInt:
+            # If intersection point is within the mesh, then its a hit!
+            collides = pointCollision(mesh, intersection)
+            if collides:
+                return (True, intersection)
 
     return (False, None)
     

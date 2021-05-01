@@ -75,9 +75,12 @@ def getScaleMatrix(xFactor, yFactor, zFactor):
 # from https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-plane-and-ray-disk-intersection
 def linePlaneIntersection(plane: np.array, planeNorm: np.array, P0, P1):
     rayDir = P1-P0
-    t = np.dot((plane-P0), planeNorm)/(np.dot(rayDir, planeNorm))
-    P = P0 + rayDir*t
-    return P
+    denominator = np.dot(rayDir, planeNorm)
+    if denominator != 0:
+        t = np.dot((plane-P0), planeNorm)/denominator
+        P = P0 + rayDir*t
+        return True, P
+    return False, None
 
 # I know this is stackoverflow but this is a brilliantly simple answer
 # https://stackoverflow.com/questions/3860206/signed-distance-between-plane-and-point
