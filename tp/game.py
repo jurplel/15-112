@@ -74,8 +74,6 @@ def startGame(app):
 
     app.heldKeys = set()
 
-    setCurrentRoom(app)
-
     app.msg = None
     app.msgTime = time.time()
     app.msgReturnToMenu = False
@@ -85,6 +83,13 @@ def startGame(app):
     app.lastEnemyHitHealth = None
     app.lastEnemyHitMaxHealth = None
     app.lastEnemyHitTime = time.time()
+
+    app.doorsToClose = []
+    app.doorCloseTimer = None
+
+    app.currentRoom = (0, 0)
+
+    setCurrentRoom(app)
 
     # player character parameters
     app.health = 100
@@ -108,27 +113,59 @@ def startGame(app):
 def game_sizeChanged(app):
     setNewProjectionMatrix(app)
 
+def livingEnemiesInThisRoom(app):
+    for enemy in app.enemies:
+        if enemy.dead:
+            continue
+
+        if not "mazeinfo" in enemy.mesh.data:
+            continue
+
+        row = enemy.mesh.data["mazeinfo"].row
+        col = enemy.mesh.data["mazeinfo"].col
+
+        if (row, col) == app.currentRoom:
+            return True
+
+    return False
+
 def setCurrentRoom(app):
     if app.maze == None:
         return
 
     row = int((app.cam[0] - app.mazeTransform[0]) / app.roomHeight)
     col = int((app.cam[2] - app.mazeTransform[2]) / app.roomWidth)
+    newRoom = True if (row, col) != app.currentRoom else False
+
     app.currentRoom = row, col
+
+    livingEnemies = livingEnemiesInThisRoom(app)
+    
+    app.doorsToClose = []
+
     for mesh in app.drawables:
-        if app.currentRoom != None and mesh.data.get("mazeinfo", None) != None:  
+        if app.currentRoom != None and mesh.data.get("mazeinfo", None) != None:
             meshMazeInfo = mesh.data["mazeinfo"]
             
 
             rowDiff = abs(meshMazeInfo.row - app.currentRoom[0])
             colDiff = abs(meshMazeInfo.col - app.currentRoom[1])
             
-            # isCurrentOrAdjacentRoom = rowDiff <= 1 and colDiff == 0 or colDiff <= 1 and rowDiff == 0
-
             isCurrentRoom = rowDiff == 0 and colDiff == 0
 
             mesh.toBeDrawn = isCurrentRoom
-            
+
+            if "door" in mesh.data and mesh.data["door"] == True:
+                if isCurrentRoom and livingEnemies:
+                    app.doorsToClose.append(mesh)
+                else:
+                    mesh.visible = False
+
+
+    if newRoom:
+        app.doorCloseTimer = time.time()+1
+
+
 def game_keyPressed(app, event):
     key = event.key.lower()
     app.heldKeys.add(key)
@@ -279,6 +316,10 @@ def game_timerFired(app):
         app.weaponState += 10*deltaTime
         if app.weaponState >= len(app.weaponSprites):
             app.weaponState = 0
+
+    if app.doorCloseTimer != None and app.doorCloseTimer-time.time() < 0:
+        for door in app.doorsToClose:
+            door.visible = True
 
     if not app.msgMovementAllowed:
         return

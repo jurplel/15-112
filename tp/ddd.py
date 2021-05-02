@@ -16,7 +16,7 @@ class Mesh:
         self.isTwoSided = isTwoSided
         self.color = Color(0, 162, 255)
         self._visible = True
-        self.toBeDrawn = True
+        self._toBeDrawn = True
         self.data = dict()
         self.calcCollisionParameters()
         self.translatedPoint = np.array([0, 0, 0, 1], dtype=np.float64)
@@ -41,6 +41,15 @@ class Mesh:
         self._visible = new_value
         self.calcCollisionParameters()
 
+    @property
+    def toBeDrawn(self):
+        return self._toBeDrawn
+
+    @toBeDrawn.setter
+    def toBeDrawn(self, new_value):
+        self._toBeDrawn = new_value
+        self.calcCollisionParameters()
+
     def setColor(self, color: Color):
         self.color = color
 
@@ -48,7 +57,7 @@ class Mesh:
         allX = []
         allY = []
         allZ = []
-        if self.visible:
+        if self.visible and self.toBeDrawn:
             for poly, _norm in self._polys:
                 allX.extend(poly[:,0])
                 allY.extend(poly[:,1])

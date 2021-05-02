@@ -303,12 +303,16 @@ def createRoom(height, width, depth, doorways = [], floor = False, ceiling = Tru
     for doorway in doorways:
         if doorway == Direction.WEST:
             plane0 = createDoorway(depth, height)
+            plane0.extend(createDoor(height))
         elif doorway == Direction.EAST:
             plane1 = createDoorway(depth, height)
+            plane1.extend(createDoor(height))
         elif doorway == Direction.SOUTH:
             plane2 = createDoorway(depth, width)
+            plane2.extend(createDoor(width))
         elif doorway == Direction.NORTH:
             plane3 = createDoorway(depth, width)
+            plane3.extend(createDoor(width))
 
     # Since doorway may be a list, all of these planes are stored as lists of meshes
     
@@ -339,6 +343,13 @@ def createRoom(height, width, depth, doorways = [], floor = False, ceiling = Tru
         planes.extend(plane5)
 
     return planes
+
+def createDoor(doorwayWidth):
+    doorWidth = 8
+    meshes = createQuadPlane(12, doorWidth)
+    list(map(lambda mesh: modifyDict(mesh.data, "door", True), meshes))
+    list(map(lambda mesh: mesh.translate(doorwayWidth/2-doorWidth/2, 0, 0), meshes))
+    return meshes
 
 def createDoorway(height, width):
     doorHeight = min(12, height)
