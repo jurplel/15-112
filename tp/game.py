@@ -1,3 +1,5 @@
+from cmu_112_graphics import *
+
 import numpy as np
 import math, time
 
@@ -90,6 +92,12 @@ def startGame(app):
     app.weaponCooldown = 400 # ms
     app.weaponLastShot = time.time()
 
+    # https://www.cs.cmu.edu/~112/notes/notes-animations-part4.html#spritesheetsWithCropping
+    # this sprite from https://forum.zdoom.org/viewtopic.php?f=4&t=15080&hilit=mac&start=32235
+    spritesheet = app.loadImage("res/weapon.png")
+    app.weaponSprites = spritesheetToSprite(spritesheet, 1, 4, spritesheet.height, spritesheet.width/4, 2, app.scaleImage)
+    app.weaponState = 0
+
     app.hurtCooldown = 400
     app.lastHurt = time.time()
 
@@ -157,6 +165,7 @@ def fireGun(app):
         return
 
     app.weaponLastShot = time.time()
+    app.weaponState = 1
     for enemy in app.enemies:
         hit = rayIntersectsMeshFirst(enemy.mesh, app.drawables, 
                                 app.cam, app.camDir)
@@ -257,6 +266,11 @@ def game_timerFired(app):
         app.lastEnemyHitName = None
         app.lastEnemyHitHealth = None
         app.lastEnemyHitMaxHealth = None
+
+    if app.weaponState > 0:
+        app.weaponState += 10*deltaTime
+        if app.weaponState >= len(app.weaponSprites):
+            app.weaponState = 0
 
     if not app.msgMovementAllowed:
         return
@@ -396,6 +410,10 @@ def drawHud(app, canvas):
         canvas.create_rectangle(app.width/2-r, app.height/2-r, app.width/2+r, app.height/2+r,
             fill="white", width=1)
 
+def drawWeaponSprite(app, canvas):
+    sprite = app.weaponSprites[int(app.weaponState)]
+    canvas.create_image(app.width/2+sprite.width()/10, app.height-sprite.height()/2, image=sprite)
+
 def game_redrawAll(app, canvas):
     if app.drawFps:
         startTime = time.time()
@@ -406,6 +424,8 @@ def game_redrawAll(app, canvas):
     drawHud(app, canvas)
 
     drawMsg(app, canvas)
+
+    drawWeaponSprite(app, canvas)
 
     # fps counter
     if app.drawFps:
