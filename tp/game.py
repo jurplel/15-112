@@ -20,7 +20,8 @@ def startGame(app):
     app.maze = None
 
     ## maze test
-    app.mazeRows = app.mazeCols = random.randint(3, 6)
+    app.mazeRows = random.randint(4, 8)
+    app.mazeCols = random.randint(4, 8)
     app.roomHeight = 50
     app.roomWidth = 100
     app.roomDepth = 20
@@ -54,7 +55,7 @@ def startGame(app):
     app.drawFps = True
     app.drawCrosshair = True
 
-    app.hudMargin = 15
+    app.hudMargin = 40
 
     app.timerDelay = 1
 
@@ -94,7 +95,7 @@ def startGame(app):
 
     showMsg(app, "Your mission:\n" +
                  f"Elliminate the boss at the bottom right corner\n" +
-                 "and recover the diamond.")
+                 "of the maze and recover the diamond.", 5)
 
 def game_sizeChanged(app):
     setNewProjectionMatrix(app)
@@ -215,7 +216,7 @@ def processKeys(app, deltaTime):
         if "space" in app.heldKeys:
             fireGun(app)
 
-def showMsg(app, msg, returnToMenu = False, allowMovement = True, delay = 3):
+def showMsg(app, msg, delay = 3, returnToMenu = False, allowMovement = True):
     if app.msg != None:
         return
 
@@ -225,7 +226,7 @@ def showMsg(app, msg, returnToMenu = False, allowMovement = True, delay = 3):
     app.msgMovementAllowed = allowMovement
 
 def pickupDiamond(app, pos):
-    showMsg(app, "You win!", True)
+    showMsg(app, "You win!", 3, True, True)
 
 def getHurt(app, amount):
     if app.health <= 0:
@@ -238,7 +239,8 @@ def getHurt(app, amount):
     app.health -= amount
 
     if app.health <= 0:
-        showMsg(app, "You died.", True, False)
+        app.health = 0
+        showMsg(app, "You died.", 3, True, False)
 
     app.lastHurt = time.time()
 
@@ -334,44 +336,7 @@ def redraw3D(app, canvas):
     # List comprehensions are potentially faster than for loops
     [drawPolygon(app, canvas, x[0], x[1]) for x in readyPolys]
 
-# stipple from https://stackoverflow.com/questions/15468327/how-can-i-vary-a-shapes-alpha-with-tkinter
-def drawHud(app, canvas):
-    # Health HUD
-    healthX = app.hudMargin
-    healthY = app.height-app.hudMargin
-    healthW = 200
-    healthH = 20
-
-    # minimap margin calculation for making the healthbar match:
-    marginWidth = (((healthY-healthH-1)-(healthY-healthW))/app.mazeCols)/8
-
-    canvas.create_rectangle(healthX+marginWidth/2, healthY-healthH, healthX+healthW-marginWidth/2, healthY)
-    canvas.create_rectangle(healthX+marginWidth/2, healthY-healthH, healthX+healthW*(app.health/100)-marginWidth/2, healthY, fill="lawn green", width=marginWidth, outline="gray25")
-
-    minimapHeight = 400
-    drawMazeMap(app, canvas, healthX, healthY-healthW, healthX+healthW, healthY-healthH-1, "gray60", "gray25", app.currentRoom, "lawn green")
-
-    # Current pos HUD
-    # canvas.create_text(app.hudMargin, app.height-app.hudMargin*2, 
-    #                     text=f"Row {app.currentRoom[0]+1}/{app.mazeRows}, " +
-    #                          f"Col {app.currentRoom[1]+1}/{app.mazeCols}",
-    #                      anchor="sw", font="Ubuntu 12 italic")
-
-    # Damage indicator
-    if app.lastEnemyHitName != None:
-        canvas.create_rectangle(app.width, app.height, app.width-150, app.height-app.hudMargin*4, fill="white", outline="black", stipple="gray50")
-
-        canvas.create_text(app.width-app.hudMargin, app.height-app.hudMargin, 
-                            text=f"Last hit: {app.lastEnemyHitName}\n" +
-                                f"HP: {app.lastEnemyHitHealth}/{app.lastEnemyHitMaxHealth}",
-                            anchor="se", font="Ubuntu 12 italic")
-
-
-    if app.drawCrosshair:
-        r = 2
-        canvas.create_rectangle(app.width/2-r, app.height/2-r, app.width/2+r, app.height/2+r,
-            fill="white", width=1)
-
+def drawMsg(app, canvas):
     if app.msg:
         ry = 20
         ry *= len(app.msg.splitlines())
@@ -388,6 +353,49 @@ def drawHud(app, canvas):
         canvas.create_text(app.width/2, app.height/2, 
                             text=app.msg, font="Ubuntu 24 italic")
 
+# stipple from https://stackoverflow.com/questions/15468327/how-can-i-vary-a-shapes-alpha-with-tkinter
+def drawHud(app, canvas):
+    # Health and minimap HUD
+    healthX = app.hudMargin
+    healthY = app.height-app.hudMargin
+    healthW = 200
+    healthH = 20
+
+    healthColor = "lawn green" if app.health > 25 else "tomato2" # Why do i always choose the weird colors
+
+    marginWidth, marginHeight = drawMazeMap(app, canvas, healthX, healthY-healthW, healthX+healthW, 
+                                            healthY-healthH, "gray60", "gray25", app.currentRoom, healthColor)
+
+    canvas.create_rectangle(healthX, healthY-healthH, healthX+healthW*(app.health/100), healthY, width=0, fill=healthColor)
+    canvas.create_rectangle(healthX+marginWidth/2, healthY-healthH, healthX+healthW-marginWidth/2, healthY, width=marginWidth, outline="gray25")
+
+    # Current pos HUD
+    # canvas.create_text(app.hudMargin, app.height-app.hudMargin*2, 
+    #                     text=f"Row {app.currentRoom[0]+1}/{app.mazeRows}, " +
+    #                          f"Col {app.currentRoom[1]+1}/{app.mazeCols}",
+    #                      anchor="sw", font="Ubuntu 12 italic")
+
+    # Damage indicator
+    if app.lastEnemyHitName != None:
+        indicatorX = app.width-app.hudMargin-healthW
+        indicatorY = app.hudMargin
+        enemyHealthColor = "lawn green" if app.lastEnemyHitHealth > app.lastEnemyHitMaxHealth*0.25 else "tomato2"
+        canvas.create_rectangle(indicatorX, indicatorY, indicatorX+healthW, indicatorY+healthH*3, fill= "gray60", width=marginWidth, outline="gray25")
+
+        canvas.create_text(indicatorX+marginWidth, indicatorY+marginWidth, 
+                            text=f"{app.lastEnemyHitName}\n", anchor="nw", font="Ubuntu 14 italic")
+
+        canvas.create_rectangle(indicatorX, indicatorY+healthH*2, indicatorX+healthW*(app.lastEnemyHitHealth)/app.lastEnemyHitMaxHealth, 
+                                indicatorY+healthH*3, width=0, fill=enemyHealthColor, outline="gray25")
+                                
+        canvas.create_rectangle(indicatorX, indicatorY+healthH*2, indicatorX+healthW, indicatorY+healthH*3, outline="gray25", width=marginWidth)
+
+
+    if app.drawCrosshair:
+        r = 2
+        canvas.create_rectangle(app.width/2-r, app.height/2-r, app.width/2+r, app.height/2+r,
+            fill="white", width=1)
+
 def game_redrawAll(app, canvas):
     if app.drawFps:
         startTime = time.time()
@@ -396,6 +404,8 @@ def game_redrawAll(app, canvas):
     redraw3D(app, canvas)
 
     drawHud(app, canvas)
+
+    drawMsg(app, canvas)
 
     # fps counter
     if app.drawFps:

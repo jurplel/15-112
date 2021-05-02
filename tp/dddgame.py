@@ -57,6 +57,7 @@ class Character:
             self.health -= amt
             
         if self.health <= 0:
+            self.health = 0
             self.dead = True
             self.mesh.visible = False
             if self.deathCallback != None:
