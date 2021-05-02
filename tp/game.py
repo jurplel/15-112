@@ -128,7 +128,7 @@ def setCurrentRoom(app):
             isCurrentRoom = rowDiff == 0 and colDiff == 0
 
             mesh.toBeDrawn = isCurrentRoom
-
+            
 def game_keyPressed(app, event):
     key = event.key.lower()
     app.heldKeys.add(key)
@@ -180,7 +180,10 @@ def fireGun(app):
 
             drop = enemy.getHit(app.weaponDamage)
             if drop != None:
-                drop.pickupCallback = lambda pos: pickupDiamond(app, pos)
+                if drop.mesh.data["pickup"] == "win":
+                    drop.pickupCallback = lambda pos: pickupDiamond(app, pos)
+                elif drop.mesh.data["pickup"] == "health":
+                    drop.pickupCallback = lambda pos: pickupHealth(app)
                 app.drops.append(drop)
                 app.drawables.append(drop.mesh)
 
@@ -237,6 +240,11 @@ def showMsg(app, msg, delay = 3, returnToMenu = False, allowMovement = True):
 def pickupDiamond(app, pos):
     showMsg(app, "You win!", 3, True, True)
 
+def pickupHealth(app):
+    app.health += 50
+    if app.health > 100:
+        app.health = 100
+
 def getHurt(app, amount):
     if app.health <= 0:
         return
@@ -284,6 +292,8 @@ def game_timerFired(app):
             char.runAI(app.cam, deltaTime)
 
     for drop in app.drops:
+        if drop.mesh.toBeDrawn == False:
+            continue
         mazeInfo = drop.mesh.data["mazeinfo"]
         dropRoom = (mazeInfo.row, mazeInfo.col)
         if dropRoom == app.currentRoom:

@@ -10,7 +10,7 @@ def readFile(path):
         return f.read()
 
 # Imports PLY 3d model files
-# Works with exports from Blender in ASCII mode
+# Works with exports from Blender in ASCII mode (Y up, Z forward for this game)
 # Model must be split into triangles (Modeling tab, edit mode, press A to select all, Ctrl+T to triangulate)
 # http://learnwebgl.brown37.net/modelers/ply_data_format.html
 

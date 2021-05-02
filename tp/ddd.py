@@ -321,6 +321,7 @@ def clipPolyOnPlane(poly: np.array, plane: np.array, planeNorm: np.array):
 # https://www.youtube.com/watch?v=XgMWc6LumG4
 def cull(avgNormal, poly, camPos):
     camRay = poly[0] - camPos
+    normVec(camRay)
     camDiff = np.dot(avgNormal, camRay)
     if camDiff > 0:
         return True

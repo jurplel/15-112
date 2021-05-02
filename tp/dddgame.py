@@ -17,8 +17,18 @@ def dropDiamond(position, color, meshData):
     diamond.mesh.color = color
     diamond.mesh.scale(2, 2, 2)
     diamond.mesh.data["mazeinfo"] = meshData["mazeinfo"]
+    diamond.mesh.data["pickup"] = "win"
     diamond.mesh.translate(position[0], position[1], position[2])
     return diamond
+
+def dropHealth(position, color, meshData):
+    heart = Drop(importPly("res/heart.ply"))
+    heart.mesh.color = color
+    heart.mesh.scale(0.2, 0.2, 0.2)
+    heart.mesh.data["mazeinfo"] = meshData["mazeinfo"]
+    heart.mesh.data["pickup"] = "health"
+    heart.mesh.translate(position[0], position[1], position[2])
+    return heart
     
 class Drop:
     def __init__(self, mesh, pickupCallback = None):
@@ -26,14 +36,17 @@ class Drop:
         self.pickupCallback = pickupCallback
         self.rotate = True
         self.rotSpeed = 45
+        self.active = True
 
     def process(self, playerPos, deltaTime):
-        if self.rotate and self.mesh.visible and self.mesh.toBeDrawn:
+        if self.rotate and self.mesh.visible and self.mesh.toBeDrawn and self.active:
             self.mesh.rotateY(self.rotSpeed*deltaTime, True)
 
-        if isWithinActiveDistance(self.mesh.avgVec, playerPos):
-            if self.pickupCallback != None:
-                self.pickupCallback(self.mesh.avgVec)
+            if isWithinActiveDistance(self.mesh.avgVec, playerPos):
+                if self.pickupCallback != None:
+                    self.pickupCallback(self.mesh.avgVec)
+                self.mesh.visible = False
+                self.active = False
 
 class Character:
     def __init__(self, health):
@@ -225,12 +238,17 @@ def populateMazeWithEnemies(maze, mazeColors, meshes, roomHeight, roomWidth):
 
             for enemyNum in range(numberOfEnemies):
                 # in rooms with a lot of enemies, there are chances for an advanced enemy
+                drop = None
                 if enemyNum > 2 and random.random() > 0.5:
                     enemyType = EnemyType.ADVANCED
+                    if random.random() > 0.5: # sometimes advanced guys can drop health powerups
+                        drop = dropHealth
                 else:
                     enemyType = EnemyType.NORMAL
 
                 makeRandomEnemyInMazeRoom(maze, meshes, enemies, mazeColors, row, col, roomHeight, roomWidth, enemyType)
+                if drop != None:
+                    enemies[-1].deathCallback = drop
 
     return enemies
 
