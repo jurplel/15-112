@@ -93,11 +93,11 @@ class EnemyType(Enum):
         return damage
 
     def getMovementSpeed(self):
-        speed = 8
+        speed = 10
         if self == EnemyType.ADVANCED:
-            speed = 10
-        elif self == EnemyType.BOSS:
             speed = 12
+        elif self == EnemyType.BOSS:
+            speed = 14
         return speed
 
     def getName(self):
@@ -200,8 +200,8 @@ def makeRandomEnemyInMazeRoom(maze, meshes, enemies, mazeColors, row, col, roomH
 
 # Returns addedCharacters (meshes is destructively modified)
 def populateMazeWithEnemies(maze, mazeColors, meshes, roomHeight, roomWidth):
-    enemyChance = 0.7 # 70% chance to have enemies
-    maxNumberOfEnemies = 4
+    enemyChance = 0.8 # 70% chance to have enemies
+    maxNumberOfEnemies = 6
 
     enemies = []
 
@@ -224,8 +224,8 @@ def populateMazeWithEnemies(maze, mazeColors, meshes, roomHeight, roomWidth):
             numberOfEnemies = random.randint(1, maxNumberOfEnemies)
 
             for enemyNum in range(numberOfEnemies):
-                # in rooms with a lot of enemies, there is a chance for an advanced enemy
-                if enemyNum > 2 and random.random() > enemyChance:
+                # in rooms with a lot of enemies, there are chances for an advanced enemy
+                if enemyNum > 2 and random.random() > 0.5:
                     enemyType = EnemyType.ADVANCED
                 else:
                     enemyType = EnemyType.NORMAL
