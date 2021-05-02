@@ -102,6 +102,7 @@ def startGame(app):
     spritesheet = app.loadImage("res/weapon.png")
     app.weaponSprites = spritesheetToSprite(spritesheet, 1, 4, spritesheet.height, spritesheet.width/4, 2, app.scaleImage)
     app.weaponState = 0
+    app.weaponSound = Sound("res/dspistol.wav")
 
     app.hurtCooldown = 400
     app.lastHurt = time.time()
@@ -203,6 +204,7 @@ def fireGun(app):
 
     app.weaponLastShot = time.time()
     app.weaponState = 1
+    app.weaponSound.start()
     for enemy in app.enemies:
         hit = rayIntersectsMeshFirst(enemy.mesh, app.drawables, 
                                 app.cam, app.camDir)

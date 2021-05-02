@@ -104,7 +104,8 @@ def vectorDist(vec0: np.array, vec1: np.array):
 
 # Used instead of built in np.linalg.norm for performance reasons
 def normVec(vec: np.array):
-    vec /= vecMagnitude(vec)
+    if vecMagnitude(vec) != 0:
+        vec /= vecMagnitude(vec)
 
 def vecMagnitude(vec: np.array):
     total = 0

@@ -11,6 +11,7 @@ def changeMode(app, mode):
         startMenu(app)
 
 def appStarted(app):
+    pygame.mixer.init()
     app._title = "fps112"
     app.changeMode = changeMode
     app.changeMode(app, "menu")
