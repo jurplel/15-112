@@ -7,64 +7,92 @@ import socket
 
 def startMultiplayer(app):
     initFps(app)
-    app.chars = dict()
 
     # Room for testing
     room = createRoom(100, 100, 20)
     app.drawables.extend(room)
 
     app.conn = net.connectToServer()
-    updateServerInfo(app)
 
     app.state = dict()
-    app.netThread = threading.Thread(target=clientThread, args=(app, gameStateChanged))
+    app.stateChanged = False
+    app.netThread = threading.Thread(target=clientThread, args=(app,))
     app.netThread.start()
+
+    updateServerInfo(app)
+
 
     # Show intro message for this gamemode
     showMsg(app, "Welcome to multiplayer.", 3)
 
 # https://realpython.com/intro-to-python-threading/
-def clientThread(app, cb):
+def clientThread(app):
     buf = bytearray()
     maybeReadables = [app.conn]
     while True:
         result = net.recvMsg(maybeReadables[0], buf)
         # Disconnect on EOF
         if result == "EOF":
-            conn.close()
+            app.conn.close()
             print(f"Disconnected from server!")
             return
         elif isinstance(result, dict):
-            pass
             app.state = result
-            cb(app)
+            app.stateChanged = True
 
 
 def gameStateChanged(app):
+    print(app.state)
+    app.stateChanged = False
     #idt is id but python already stole id >:(
-    idtList = []
+    # make list of ids from state
+    stateIdts = []
     for key in app.state:
         found = False
-        idt = int(key[0])
-        if not idt in idtList:
-            idtList.append(idt)
+        if "pos" in key:
+            idt = int(key[0])
+            if not idt in stateIdts:
+                stateIdts.append(idt)
 
-    for charIdt, char in app.chars.items():
-        if not charIdt in idtList:
-            app.drawables.remove(charIdt.mesh)
-            idtList.remove(charIdt)
+    for key in app.state:
+        for idt in stateIdts:
+            if str(idt) not in key and "health" in key:
+                app.health = app.state[key]
+
+    # Add any new characters
+    for idt in stateIdts:
+        found = False
+        for char in app.chars:
+            mpid = char.mesh.data.get("mpid", None)
+            if mpid != None and mpid == idt:
+                found = True
+
+        if not found:
+            newChar = Character()
+            newChar.mesh.data["mpid"] = idt
+            app.chars.append(newChar)
+            app.drawables.append(newChar.mesh)
+
+    # Delete any old characters and set the positions of existing ones
+    toRemove = []
+    for char in app.chars:
+        charIdt = char.mesh.data["mpid"]
+        if not charIdt in stateIdts:
+            app.drawables.remove(char.mesh)
+            toRemove.append(char)
+            continue
+
 
         posKey = str(charIdt) + "pos"
         dirKey = str(charIdt) + "dir"
         char.mesh.moveTo(app.state[posKey][0], app.state[posKey][1], app.state[posKey][2])
         char.facePoint(app.state[posKey]+app.state[dirKey])
+        char.health = app.state[str(charIdt) + "health"]
 
-
-    for idt in idtList:
-        if app.chars.get(idt, None) == None:
-            newChar = Character()
-            app.chars[idt] = newChar
-            app.drawables.append(newChar.mesh)
+    # This is still the deletion bit obviously
+    for char in toRemove:
+        app.chars.remove(char)
+        
 
 
 def multiplayer_appStopped(app):
@@ -116,12 +144,24 @@ def processKeys(app, deltaTime):
         recalculateCamDir(app)
 
         if "space" in app.heldKeys:
-            fireWeapon(app, app.weapons[0])
+            hit = fireWeapon(app, app.weapons[0])
+            forwardHitToServer(app, hit)            
 
         return moved
 
+def forwardHitToServer(app, hitChar):
+    if hitChar == None or not isinstance(hitChar, Character):
+        return
+
+    mpid = hitChar.mesh.data.get("mpid", None)
+    if mpid == None:
+        return
+
+    info = {f"{mpid}health": hitChar.health}
+    net.sendInfo(info, app.conn)
+
 def updateServerInfo(app):
-    info = {"pos": app.cam, "dir": app.camDir}
+    info = {"pos": app.cam, "dir": app.camDir, "health": app.health}
     net.sendInfo(info, app.conn)
 
 def multiplayer_timerFired(app):
@@ -133,6 +173,9 @@ def multiplayer_timerFired(app):
         if moved: 
             updateServerInfo(app)
 
+    if app.stateChanged:
+        gameStateChanged(app)
+
     app.lastTimerTime = time.time()
 
 
@@ -142,6 +185,8 @@ def multiplayer_redrawAll(app, canvas):
 
     # Draw all 3D meshes/polygons
     redraw3D(app, canvas)
+
+    drawHud(app, canvas)    
 
     drawMsg(app, canvas)
 

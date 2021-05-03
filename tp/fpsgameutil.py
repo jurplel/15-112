@@ -4,6 +4,8 @@ import time
 from util import *
 import ddd
 
+from maze import drawMazeMap
+
 class Weapon:
     def __init__(self, damage, cooldown):
         self.damage = damage
@@ -43,7 +45,7 @@ def initFps(app):
     app.chars = []
     app.drops = []
 
-    # I want you to go AS FAST AS POSSIBLE
+    # Listen--I want you to go AS FAST AS POSSIBLE
     app.timerDelay = 1
 
     # Player parameters
@@ -69,17 +71,18 @@ def initFps(app):
     app.started = time.time()
     app.lastTimerTime = time.time()
 
+    # Initialize default player/cam coordinates
+    app.cam = np.array([10, 4, 10, 0], dtype=np.float64)
+    app.camDir = np.array([0, 0, 1, 0], dtype=np.float64)
+    app.yaw = 0
+
+
     # Options that can be customizable
     app.fov = 90
     app.wireframe = False # I recommend trying this option!
     app.drawFps = True
     app.drawCrosshair = True
     app.hudMargin = 40
-
-    # Initialize default player/cam coordinates
-    app.cam = np.array([10, 4, 10, 0], dtype=np.float64)
-    app.camDir = np.array([0, 0, 1, 0], dtype=np.float64)
-    app.yaw = 0
 
     # Default light direction
     app.light = np.array([1, -0.5, 1, 0], dtype=np.float64)
@@ -88,6 +91,10 @@ def initFps(app):
     # Initialize matrices
     setNewProjectionMatrix(app)
     setNewViewMatrix(app)
+
+    # Maze logic
+    app.maze = None
+    app.roomJustChanged = False
 
     # Initialize weapons
     app.weapons = []
@@ -121,6 +128,52 @@ def initPistol(app):
 
     app.weapons.append(pistol)
 
+def fireWeapon(app, weapon):
+    sinceLastFired = time.time() - weapon.lastShot
+    if sinceLastFired*1000 < weapon.cooldown:
+        return
+
+    weapon.lastShot = time.time()
+    if weapon.hasSprites:
+        weapon.spriteState = 1
+    
+    weapon.playSound()
+    for char in app.chars:
+        hit = ddd.rayIntersectsMeshFirst(char.mesh, app.drawables, 
+                                app.cam, app.camDir)
+        
+        # If the enemy isn't blocked by anything (or close to being blocked by our definition)
+        # then the enemy got hit!
+        if hit:
+            # check if its in the current room too!
+            mazeInfo = char.mesh.data.get("mazeinfo", None)
+            if mazeInfo != None and (mazeInfo.row, mazeInfo.col) != app.currentRoom:
+                return
+
+            drop = char.getHit(weapon.damage)
+            if drop != None:
+                if drop.mesh.data["pickup"] == "win":
+                    drop.pickupCallback = lambda pos: pickupWin(app, pos)
+                elif drop.mesh.data["pickup"] == "health":
+                    drop.pickupCallback = lambda pos: pickupHealth(app)
+                app.drops.append(drop)
+                app.drawables.append(drop.mesh)
+
+            # Set damage indicator variables
+            app.lastHitName = char.name
+            app.lastHitHealth = char.health
+            app.lastHitMaxHealth = char.maxHealth
+            app.lastHitTime = time.time()+3
+            return char
+
+def pickupWin(app, pos):
+    showMsg(app, "You win!", 3, True, True)
+
+def pickupHealth(app):
+    app.health += 50
+    if app.health > 100:
+        app.health = 100
+
 def getHurt(app, amount):
     if app.health <= 0:
         return
@@ -136,6 +189,30 @@ def getHurt(app, amount):
         showMsg(app, "You died.", 3, True, False)
 
     app.lastHurt = time.time()
+
+def setCurrentRoom(app):
+    if app.maze == None:
+        return
+
+    row = int(app.cam[0] / app.roomHeight)
+    col = int(app.cam[2] / app.roomWidth)
+    newRoom = True if (row, col) != app.currentRoom else False
+    app.roomJustChanged = newRoom
+
+    app.currentRoom = row, col
+
+    for mesh in app.drawables:
+        if app.currentRoom != None and mesh.data.get("mazeinfo", None) != None:
+            meshMazeInfo = mesh.data.get("mazeinfo", None)
+            
+            if meshMazeInfo != None:
+                rowDiff = abs(meshMazeInfo.row - app.currentRoom[0])
+                colDiff = abs(meshMazeInfo.col - app.currentRoom[1])
+                
+                isCurrentRoom = rowDiff == 0 and colDiff == 0
+
+                mesh.toBeDrawn = isCurrentRoom
+
 
 def redraw3D(app, canvas):
     readyPolys = []
@@ -201,6 +278,54 @@ def drawWeaponSprite(app, canvas):
             canvas.create_image(app.width/2+sprite.width()/10, app.height-sprite.height()/2, image=sprite)
             return
 
+def drawHealthAndMinimap(app, canvas):
+    healthX = app.hudMargin
+    healthY = app.height-app.hudMargin
+    healthW = 200
+    healthH = 20
+    marginWidth = 6
+
+    healthColor = "lawn green" if app.health > 25 else "tomato2" # Why do i always choose the weird colors
+
+    if hasattr(app, "mazeRows") and hasattr(app, "mazeCols") and hasattr(app, "currentRoom"):
+        drawMazeMap(app, canvas, healthX, healthY-healthW, healthX+healthW, 
+                                                healthY-healthH, "gray60", "gray25", app.currentRoom, healthColor)
+    
+
+    canvas.create_rectangle(healthX, healthY-healthH, healthX+healthW*(app.health/100), healthY, width=0, fill=healthColor)
+    canvas.create_rectangle(healthX+marginWidth/2, healthY-healthH, healthX+healthW-marginWidth/2, healthY, width=marginWidth, outline="gray25")
+
+def drawDamageIndicator(app, canvas):
+    # Damage indicator
+    if app.lastHitName == None:
+        return
+        
+    marginWidth = 6
+    indicatorW = 200
+    indicatorH = 20
+    indicatorX = app.width-app.hudMargin-indicatorW
+    indicatorY = app.hudMargin
+    enemyHealthColor = "lawn green" if app.lastHitHealth > app.lastHitMaxHealth*0.25 else "tomato2"
+    canvas.create_rectangle(indicatorX, indicatorY, indicatorX+indicatorW, indicatorY+indicatorH*3, fill= "gray60", width=marginWidth, outline="gray25")
+
+    canvas.create_text(indicatorX+marginWidth, indicatorY+marginWidth, 
+                        text=f"{app.lastHitName}\n", anchor="nw", font="Ubuntu 14 italic", fill="black")
+
+    canvas.create_rectangle(indicatorX, indicatorY+indicatorH*2, indicatorX+indicatorW*(app.lastHitHealth)/app.lastHitMaxHealth, 
+                            indicatorY+indicatorH*3, width=0, fill=enemyHealthColor, outline="gray25")
+                            
+    canvas.create_rectangle(indicatorX, indicatorY+indicatorH*2, indicatorX+indicatorW, indicatorY+indicatorH*3, outline="gray25", width=marginWidth)
+
+# stipple from https://stackoverflow.com/questions/15468327/how-can-i-vary-a-shapes-alpha-with-tkinter
+def drawHud(app, canvas):
+    drawHealthAndMinimap(app, canvas)
+    drawDamageIndicator(app, canvas)
+    
+    if app.drawCrosshair:
+        r = 2
+        canvas.create_rectangle(app.width/2-r, app.height/2-r, app.width/2+r, app.height/2+r,
+            fill="white", width=1, outline="black")
+
 def drawMsg(app, canvas):
     if app.msg:
         ry = 20
@@ -218,9 +343,11 @@ def drawMsg(app, canvas):
         canvas.create_text(app.width/2, app.height/2, text=app.msg, font="Ubuntu 24 italic", fill="black")
 
 def fpsGameProcess(app, deltaTime):
+    roomJustChanged = False
     processMsg(app)
     processWeapons(app, deltaTime)
     processLastHit(app)
+    processDrops(app, deltaTime)
 
 def processMsg(app):
     if app.msg != None and app.msgTime-time.time() < 0:
@@ -241,6 +368,15 @@ def processLastHit(app):
         app.lastHitHealth = None
         app.lastHitMaxHealth = None
 
+def processDrops(app, deltaTime):
+   for drop in app.drops:
+        if drop.mesh.toBeDrawn == False:
+            continue
+        mazeInfo = drop.mesh.data.get("mazeinfo", None)
+        
+        if mazeInfo == None or (mazeInfo.row, mazeInfo.col) == app.currentRoom:
+            drop.process(app.cam, deltaTime)
+
 # drz/drx is delta relative z/x
 def relativeCamMove(app, drz, drx):
     oldCam = copy.deepcopy(app.cam)
@@ -255,6 +391,7 @@ def relativeCamMove(app, drz, drx):
             app.cam = oldCam
             return False
 
+    setCurrentRoom(app)
     return True
     
 

@@ -37,24 +37,30 @@ def recvMsg(socket: socket.socket, buffer: bytearray):
             buffer.pop(0)
         return data
 
-
-def updateState(state, allSockets, data, i):
-    for key, value in data.items():
-        stateKey = str(i) + key
-        state[stateKey] = value
-    
-    for ci, client in enumerate(allSockets):
-        if ci == 0 or ci == i:
+def updateClientStates(state, allSockets, excludeIndex = None):
+    for i, client in enumerate(allSockets):
+        if i == 0 or i == excludeIndex:
             continue
 
         clientState = copy.deepcopy(state)
-        removeClientFromState(clientState, ci)
+        removeClientFromState(clientState, i, ["health"])
         sendInfo(clientState, client)
+
+    print("updated client state", state)
+
+def updateState(state, allSockets, data, i):
+    for key, value in data.items():
+        if key[0].isdecimal():
+            state[key] = value
+        else:
+            stateKey = str(i) + key
+            state[stateKey] = value
         
-def removeClientFromState(state, i):
+def removeClientFromState(state, i, skips = []):    
     keys = list(state.keys())
     for key in keys:
-        if key.startswith(str(i)):
+        print(key[1:], key[1:] in skips)
+        if key.startswith(str(i)) and not key[1:] in skips:
             state.pop(key)
 
 def runServer():
@@ -73,6 +79,7 @@ def runServer():
     addresses = ["0.0.0.0"]
     buffers = [bytearray()]
     while True:
+        updateClientStates(state, maybeReadables)
         readables, writables, errs = select.select(maybeReadables, [], [], 60)
         for readable in readables:
             i = maybeReadables.index(readable)
