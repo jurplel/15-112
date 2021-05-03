@@ -85,6 +85,9 @@ class Mesh:
             np.matmul(poly, translationMatrix, poly)
         self.calcCollisionParameters()
 
+    def moveTo(self, x, y, z):
+        self.translate(x-self.translatedPoint[0], y-self.translatedPoint[1], z-self.translatedPoint[2])
+
     def rotateX(self, degX, relative = False):
         rotationMatrix = getXRotationMatrix(degX)
         

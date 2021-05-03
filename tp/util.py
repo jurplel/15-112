@@ -1,10 +1,10 @@
 from enum import Enum
 
-import math
+import math, copy
 
 import pygame
 
-from cmu_112_graphics import *
+from PIL import ImageTk
 
 # from https://www.cs.cmu.edu/~112/notes/notes-2d-lists.html#creating2dLists
 def make2dList(rows, cols, val = None):

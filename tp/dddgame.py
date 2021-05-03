@@ -49,7 +49,7 @@ class Drop:
                 self.active = False
 
 class Character:
-    def __init__(self, health):
+    def __init__(self, health = 100):
         self.mesh = importPly("res/char.ply")
         self.mesh.data["ischaracter"] = True
         self.health = health
@@ -60,7 +60,28 @@ class Character:
         self.deathCallback = None
         self.dead = False
         self.name = "undefined"
+
+    # https://math.stackexchange.com/questions/654315/how-to-convert-a-dot-product-of-two-vectors-to-the-angle-between-the-vectors
+    # second answer for formula for angle diff to 2pi
+    def facePoint(self, point):
+        # 0:3:2 serves to skip the Y coordinate
+        toPoint = point[0:3:2]-self.mesh.avgVec[0:3:2]
         
+        lookDir2D = self.lookDir[0:3:2]
+        normVec(toPoint)
+        
+        dp = np.dot(lookDir2D, toPoint)
+        
+        angleDiff = np.arctan2(lookDir2D[0], lookDir2D[1]) - np.arctan2(toPoint[0], toPoint[1])
+        
+        angleDiff = normAngle(math.degrees(angleDiff), True)
+        if abs(angleDiff) < 1:
+            return
+
+        self.mesh.rotateY(angleDiff, True)
+
+        self.lookDir = self.lookDir @ getYRotationMatrix(angleDiff)
+
 
     def getHit(self, amt):
         avgVec = copy.deepcopy(self.mesh.avgVec)
@@ -133,27 +154,6 @@ class Enemy(Character):
         self.movementSpeed = enemyType.getMovementSpeed()
         self.dmgAmount = enemyType.getDamageAmount()
         self.name = enemyType.getName()
-
-    # https://math.stackexchange.com/questions/654315/how-to-convert-a-dot-product-of-two-vectors-to-the-angle-between-the-vectors
-    # second answer for formula for angle diff to 2pi
-    def facePoint(self, point):
-        # 0:3:2 serves to skip the Y coordinate
-        toPoint = point[0:3:2]-self.mesh.avgVec[0:3:2]
-        
-        lookDir2D = self.lookDir[0:3:2]
-        normVec(toPoint)
-        
-        dp = np.dot(lookDir2D, toPoint)
-        
-        angleDiff = np.arctan2(lookDir2D[0], lookDir2D[1]) - np.arctan2(toPoint[0], toPoint[1])
-        
-        angleDiff = normAngle(math.degrees(angleDiff), True)
-        if abs(angleDiff) < 1:
-            return
-
-        self.mesh.rotateY(angleDiff, True)
-
-        self.lookDir = self.lookDir @ getYRotationMatrix(angleDiff)
         
     def moveTowards(self, point, speed):
         toPlayer = point[0:3]-self.mesh.avgVec

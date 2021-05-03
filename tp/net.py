@@ -6,6 +6,7 @@
 import select
 import socket
 import pickle
+import copy
 
 import util
 
@@ -15,11 +16,8 @@ def connectToServer(ip = "0.0.0.0", port = 52021):
     return sock
 
 def sendInfo(info: dict, socket: socket.socket):
-    print(info)
-
     msg = pickle.dumps(info)
     msgLength = len(msg)
-    print(msgLength)
 
     msgLength = msgLength.to_bytes(2, byteorder="big", signed=False)
     socket.sendall(msgLength)
@@ -35,10 +33,29 @@ def recvMsg(socket: socket.socket, buffer: bytearray):
     msgLength = int.from_bytes(buffer[0:headerLen], byteorder="big", signed=False)
     if len(buffer) >= headerLen+msgLength:
         data = pickle.loads(buffer[headerLen:headerLen+msgLength])
-        buffer = buffer[headerLen+msgLength+1:]
+        for i in range(headerLen+msgLength):
+            buffer.pop(0)
         return data
 
 
+def updateState(state, allSockets, data, i):
+    for key, value in data.items():
+        stateKey = str(i) + key
+        state[stateKey] = value
+    
+    for ci, client in enumerate(allSockets):
+        if ci == 0 or ci == i:
+            continue
+
+        clientState = copy.deepcopy(state)
+        removeClientFromState(clientState, ci)
+        sendInfo(clientState, client)
+        
+def removeClientFromState(state, i):
+    keys = list(state.keys())
+    for key in keys:
+        if key.startswith(str(i)):
+            state.pop(key)
 
 def runServer():
     addr = ("", 52021)
@@ -50,12 +67,15 @@ def runServer():
     serv.listen(5)
     print(f"Server started on port {addr[1]}")
 
+    state = dict()
+
     maybeReadables = [serv]
     addresses = ["0.0.0.0"]
     buffers = [bytearray()]
     while True:
         readables, writables, errs = select.select(maybeReadables, [], [], 60)
         for readable in readables:
+            i = maybeReadables.index(readable)
             if readable is serv:
                 client, clientAddr = serv.accept()
                 maybeReadables.append(client)
@@ -63,17 +83,17 @@ def runServer():
                 buffers.append(bytearray())
                 print(f"{clientAddr[0]} connected.")
             else:
-                result = recvMsg(readable, buffers[maybeReadables.index(readable)])
+                result = recvMsg(readable, buffers[i])
                 # Disconnect on EOF
                 if result == "EOF":
                     readable.close()
-                    i = maybeReadables.index(readable)
                     print(f"{addresses[i][0]} disconnected.")
                     addresses.pop(i)
                     maybeReadables.pop(i)
                     buffers.pop(i)
-                else:
-
+                    removeClientFromState(state, i)
+                elif isinstance(result, dict):
+                    updateState(state, maybeReadables, result, i)
 
 
 if __name__ == '__main__':
