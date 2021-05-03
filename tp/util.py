@@ -75,6 +75,7 @@ class Direction(Enum):
         elif self == Direction.EAST:
             return Direction.WEST
 
+# https://www.cs.cmu.edu/~112/notes/notes-animations-part4.html#spritesheetsWithCropping
 def spritesheetToSprite(spritesheet, rows, cols, height, width, scale = 1, scaleFn = None):
     weaponSprites = [] # 128x128
     for row in range(rows):

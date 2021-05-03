@@ -59,6 +59,7 @@ class Character:
         self.lookDir = [0, 0, 1, 0]
         self.deathCallback = None
         self.dead = False
+        self.name = "undefined"
         
 
     def getHit(self, amt):
