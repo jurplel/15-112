@@ -417,8 +417,7 @@ def drawMsg(app, canvas):
         rx *= longestLineLen
 
         canvas.create_rectangle(app.width/2-rx, app.height/2-ry, app.width/2+rx, app.height/2+ry, fill="white", outline="black", stipple="gray50")
-        canvas.create_text(app.width/2, app.height/2, 
-                            text=app.msg, font="Ubuntu 24 italic")
+        canvas.create_text(app.width/2, app.height/2, text=app.msg, font="Ubuntu 24 italic", fill="black")
 
 # stipple from https://stackoverflow.com/questions/15468327/how-can-i-vary-a-shapes-alpha-with-tkinter
 def drawHud(app, canvas):
@@ -436,12 +435,6 @@ def drawHud(app, canvas):
     canvas.create_rectangle(healthX, healthY-healthH, healthX+healthW*(app.health/100), healthY, width=0, fill=healthColor)
     canvas.create_rectangle(healthX+marginWidth/2, healthY-healthH, healthX+healthW-marginWidth/2, healthY, width=marginWidth, outline="gray25")
 
-    # Current pos HUD
-    # canvas.create_text(app.hudMargin, app.height-app.hudMargin*2, 
-    #                     text=f"Row {app.currentRoom[0]+1}/{app.mazeRows}, " +
-    #                          f"Col {app.currentRoom[1]+1}/{app.mazeCols}",
-    #                      anchor="sw", font="Ubuntu 12 italic")
-
     # Damage indicator
     if app.lastEnemyHitName != None:
         indicatorX = app.width-app.hudMargin-healthW
@@ -450,7 +443,7 @@ def drawHud(app, canvas):
         canvas.create_rectangle(indicatorX, indicatorY, indicatorX+healthW, indicatorY+healthH*3, fill= "gray60", width=marginWidth, outline="gray25")
 
         canvas.create_text(indicatorX+marginWidth, indicatorY+marginWidth, 
-                            text=f"{app.lastEnemyHitName}\n", anchor="nw", font="Ubuntu 14 italic")
+                            text=f"{app.lastEnemyHitName}\n", anchor="nw", font="Ubuntu 14 italic", fill="black")
 
         canvas.create_rectangle(indicatorX, indicatorY+healthH*2, indicatorX+healthW*(app.lastEnemyHitHealth)/app.lastEnemyHitMaxHealth, 
                                 indicatorY+healthH*3, width=0, fill=enemyHealthColor, outline="gray25")
@@ -461,7 +454,7 @@ def drawHud(app, canvas):
     if app.drawCrosshair:
         r = 2
         canvas.create_rectangle(app.width/2-r, app.height/2-r, app.width/2+r, app.height/2+r,
-            fill="white", width=1)
+            fill="white", width=1, outline="black")
 
 def drawWeaponSprite(app, canvas):
     sprite = app.weaponSprites[int(app.weaponState)]
@@ -484,4 +477,4 @@ def game_redrawAll(app, canvas):
     if app.drawFps:
         denom = time.time()-startTime
         if denom != 0:
-            canvas.create_text(15, 15, text=int(1/(time.time()-startTime)), anchor="nw")
+            canvas.create_text(15, 15, text=int(1/(time.time()-startTime)), anchor="nw", fill="gray50")

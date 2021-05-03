@@ -63,9 +63,9 @@ class Mesh:
                 allY.extend(poly[:,1])
                 allZ.extend(poly[:,2])
         else:
-            allX.append(0)
-            allY.append(0)
-            allZ.append(0)
+            allX.append(-10)
+            allY.append(-10)
+            allZ.append(-10)
 
         self.maxX = max(allX)
         self.avgX = sum(allX)/len(allX)

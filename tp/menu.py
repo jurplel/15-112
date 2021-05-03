@@ -43,7 +43,7 @@ def menu_mouseReleased(app, event):
 
 def menu_redrawAll(app, canvas):
     # title
-    canvas.create_text(app.width/2, app.height/5, text="fps112", font="Caveat 64 bold")
+    canvas.create_text(app.width/2, app.height/5, text="fps112", font="Caveat 64 bold", fill="black")
 
     # menu items
     for i, menuItem in enumerate(app.menuItems):

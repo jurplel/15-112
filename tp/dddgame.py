@@ -362,8 +362,6 @@ def createDoorway(height, width):
     list(map(lambda mesh: mesh.translate((width-doorWidth)/2, doorHeight, 0), plane2))
 
     planes = plane0 + plane1 + plane2
-    # after modifying polygons in place, recalculate hitboxes (might not even be necessary now)
-    [plane.calcCollisionParameters() for plane in planes]
 
     return planes
 

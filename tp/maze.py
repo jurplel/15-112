@@ -104,10 +104,11 @@ def drawMazeMap(app, canvas, tx0, ty0, tx1, ty1, color, bgcolor, currentRoom, ma
 
                 canvas.create_rectangle(mx0, my0, mx1, my1, width=0, fill=color)
 
+            # You are here indicator
             if currentRoom == (row, col):
                 cx = x0+(x1-x0)/2
                 cy = y0+(y1-y0)/2
                 r = min(cellHeight, cellWidth)/5
-                canvas.create_oval(cx-r, cy-r, cx+r, cy+r, fill=markerColor)
+                canvas.create_oval(cx-r, cy-r, cx+r, cy+r, fill=markerColor, outline="black")
 
     return margin, margin
