@@ -9,7 +9,7 @@ def resetSizeVars(app):
 def startMenu(app):
     app.mode = "menu"
     app.menuItemWidthGuess = 200
-    app.menuItems = ["start", "quit"]
+    app.menuItems = ["start", "multiplayer", "quit"]
     resetSizeVars(app)
 
     app.highlightedMenuItem = None
@@ -36,6 +36,8 @@ def menu_mouseReleased(app, event):
         itemText = app.menuItems[app.highlightedMenuItem]
         if itemText == "start":
             app.changeMode(app, "game")
+        elif itemText == "multiplayer":
+            app.changeMode(app, "multiplayer")
         elif itemText == "options":
             app.showingSettings = True
         elif itemText == "quit":

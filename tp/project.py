@@ -2,11 +2,14 @@ from cmu_112_graphics import *
 
 from menu import *
 from game import *
+from multiplayer import *
 
 def changeMode(app, mode):
     app.mode = mode
     if app.mode == "game":
         startGame(app)
+    elif app.mode == "multiplayer":
+        startMultiplayer(app)
     elif app.mode == "menu":
         startMenu(app)
 

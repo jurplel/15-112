@@ -32,9 +32,6 @@ def startGame(app):
         if isinstance(char, Enemy):
             char.hitCallback = lambda dmg: getHurt(app, dmg)
 
-    app.light = np.array([1, -0.5, 1, 0], dtype=np.float64)
-    normVec(app.light)
-
     # Game logic
     app.doorsToClose = []
     app.doorCloseTimer = None
@@ -157,22 +154,6 @@ def pickupHealth(app):
     app.health += 50
     if app.health > 100:
         app.health = 100
-
-def getHurt(app, amount):
-    if app.health <= 0:
-        return
-
-    sinceLastHurt = time.time() - app.lastHurt
-    if sinceLastHurt*1000 < app.hurtCooldown:
-        return
-
-    app.health -= amount
-
-    if app.health <= 0:
-        app.health = 0
-        showMsg(app, "You died.", 3, True, False)
-
-    app.lastHurt = time.time()
 
 def processKeys(app, deltaTime):
     speed = app.movementSpeed*deltaTime
