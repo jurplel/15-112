@@ -284,7 +284,9 @@ def drawHealthAndMinimap(app, canvas):
 
     healthColor = "lawn green" if app.health > 25 else "tomato2" # Why do i always choose the weird colors
 
-    if hasattr(app, "mazeRows") and hasattr(app, "mazeCols") and hasattr(app, "currentRoom"):
+    if (hasattr(app, "maze") and app.maze != None and 
+        hasattr(app, "mazeCols") and hasattr(app, "mazeRows") and 
+        hasattr(app, "currentRoom")):
         drawMazeMap(app, canvas, healthX, healthY-healthW, healthX+healthW, 
                                                 healthY-healthH, "gray60", "gray25", app.currentRoom, healthColor)
     
@@ -383,10 +385,9 @@ def relativeCamMove(app, drz, drx):
 
     app.cam += sidewaysCamDir * drx
 
-    for mesh in app.drawables:
-        if ddd.pointCollision(mesh, app.cam, 1):
-            app.cam = oldCam
-            return False
+    if ddd.pointCollidesWithOtherMeshes(app.cam, app.drawables, 1):
+        app.cam = oldCam
+        return False
 
     setCurrentRoom(app)
     return True

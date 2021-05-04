@@ -63,6 +63,9 @@ def livingEnemiesInThisRoom(app):
 
 def game_keyPressed(app, event):
     key = event.key.lower()
+    if key == "escape":
+        app.changeMode(app, "menu")
+
     app.heldKeys.add(key)
 
 def game_keyReleased(app, event):

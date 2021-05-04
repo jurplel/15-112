@@ -427,6 +427,13 @@ def meshCollision(mesh0: Mesh, mesh1: Mesh):
     zCollides = mesh0.minZ <= mesh1.minZ <= mesh0.maxZ or mesh0.minZ <= mesh1.maxZ <= mesh0.maxZ
     return xCollides and yCollides and zCollides
 
+def pointCollidesWithOtherMeshes(pointVec: np.array, otherMeshes, margin = 0):
+    for mesh in otherMeshes:
+        if pointCollision(mesh, pointVec, margin):
+            return True
+
+    return False
+
 def pointCollision(mesh: Mesh, pointVec: np.array, margin = 0):
     collides = (mesh.minX-margin <= pointVec[0] <= mesh.maxX+margin and 
                 mesh.minY-margin <= pointVec[1] <= mesh.maxY+margin and 

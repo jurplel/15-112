@@ -31,6 +31,8 @@ def startMultiplayer(app):
     list(map(lambda mesh: mesh.setColor(Color(92, 28, 166)), otherRoom))
     app.drawables.extend(otherRoom)
 
+    app.maze = None
+
 
     # Server connection and network setup
     try:
@@ -38,7 +40,6 @@ def startMultiplayer(app):
 
         app.netThread = threading.Thread(target=clientThread, args=(app,))
         app.netThread.start()
-        updateServerInfo(app)
         # Show intro message for this gamemode
         showMsg(app, "Welcome to multiplayer.", 3)
     except Exception as e:
@@ -54,12 +55,12 @@ def startMultiplayer(app):
     # Multiplayer game logic
     app.respawnTimer = None
     app.spawnPoints = [(np.array([10, 4, 10, 0], dtype=np.float64), 270),
-                       (np.array([90, 4, 190, 0], dtype=np.float64), 180),
-                       (np.array([90, 4, 10, 0], dtype=np.float64), 90),
-                       (np.array([10, 4, 190, 0], dtype=np.float64), 180)]
-
+                       (np.array([90, 4, 190, 0], dtype=np.float64), 180)]
+                    #    (np.array([90, 4, 10, 0], dtype=np.float64), 90),
+                    #    (np.array([10, 4, 190, 0], dtype=np.float64), 180)]
 
     spawnAtASpawnPoint(app)
+
 
 # https://realpython.com/intro-to-python-threading/
 def clientThread(app):
@@ -144,6 +145,9 @@ def multiplayer_sizeChanged(app):
 
 def multiplayer_keyPressed(app, event):
     key = event.key.lower()
+    if key == "escape":
+        app.changeMode(app, "menu")
+        
     app.heldKeys.add(key)
 
 def multiplayer_keyReleased(app, event):
@@ -160,12 +164,19 @@ def respawn(app):
     updateServerInfo(app)
 
 def spawnAtASpawnPoint(app):
+    loopCount = 0
     while True:
+        loopCount += 1
         spawnPoint = random.choice(app.spawnPoints)
         app.cam = spawnPoint[0]
         app.yaw = spawnPoint[1]
-        break
+        if not ddd.pointCollidesWithOtherMeshes(app.cam, app.drawables, 1):
+            break
+        if loopCount >= len(app.spawnPoints)*2:
+            break
+
     recalculateCamDir(app)
+    updateServerInfo(app)
 
 
 def processKeys(app, deltaTime):
