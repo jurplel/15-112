@@ -31,7 +31,7 @@ class Weapon:
 
     def playSound(self):
         if self.hasSound and self.sound != None:
-            self.sound.start()
+            self.sound.play()
 
 
 def setNewViewMatrix(app):
@@ -112,7 +112,7 @@ def initPistol(app):
     sprites = spritesheetToSprite(spritesheet, 1, 4, spritesheet.height, spritesheet.width/4, 2, app.scaleImage)
 
     # Pistol sound
-    sound = Sound("res/dspistol.wav")
+    sound = pygame.mixer.Sound("res/dspistol.wav")
 
     # Pistol object
     pistol = Weapon(dmg, cooldown)

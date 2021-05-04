@@ -28,6 +28,7 @@ def dropHealth(position, color, meshData):
     heart.mesh.data["mazeinfo"] = meshData["mazeinfo"]
     heart.mesh.data["pickup"] = "health"
     heart.mesh.translate(position[0], position[1], position[2])
+    heart.sound = pygame.mixer.Sound("res/dsitemup.wav")
     return heart
     
 class Drop:
@@ -37,12 +38,15 @@ class Drop:
         self.rotate = True
         self.rotSpeed = 45
         self.active = True
+        self.sound = None
 
     def process(self, playerPos, deltaTime):
         if self.rotate and self.mesh.visible and self.mesh.toBeDrawn and self.active:
             self.mesh.rotateY(self.rotSpeed*deltaTime, True)
 
             if isWithinActiveDistance(self.mesh.avgVec, playerPos):
+                if self.sound != None:
+                    self.sound.play()
                 if self.pickupCallback != None:
                     self.pickupCallback(self.mesh.avgVec)
                 self.mesh.visible = False
