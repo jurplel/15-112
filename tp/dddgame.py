@@ -52,7 +52,7 @@ class Character:
     def __init__(self, health = 100):
         self.mesh = importPly("res/char.ply")
         self.mesh.data["ischaracter"] = True
-        self._health = health
+        self.health = health
         self.maxHealth = health
         # default color for characters
         self.mesh.color = Color(214, 124, 13)
@@ -60,21 +60,6 @@ class Character:
         self.deathCallback = None
         self.dead = False
         self.name = "undefined"
-
-    @property
-    def health(self):
-        return self._health
-
-    @health.setter
-    def health(self, new_value):
-        self._health = new_value
-        if self._health <= 0:
-            self._health = 0
-            self.dead = True
-            self.mesh.visible = False
-            if self.deathCallback != None:
-                return self.deathCallback(copy.deepcopy(self.mesh.avgVec), self.mesh.color, self.mesh.data)
-
 
     # https://math.stackexchange.com/questions/654315/how-to-convert-a-dot-product-of-two-vectors-to-the-angle-between-the-vectors
     # second answer for formula for angle diff to 2pi
@@ -98,12 +83,25 @@ class Character:
         self.lookDir = self.lookDir @ getYRotationMatrix(angleDiff)
 
 
-    def getHit(self, amt):
-        if self.dead:
-            return
+    def setHealth(self, value):
+        self.health = value
 
-        if self.health > 0:
-            self.health -= amt
+        if self.health > 100:
+            self.health = 100
+
+        if self.health <= 0:
+            avgVec = copy.deepcopy(self.mesh.avgVec)
+            self.health = 0
+            self.dead = True
+            self.mesh.visible = False
+            if self.deathCallback != None:
+                return self.deathCallback(avgVec, self.mesh.color, self.mesh.data)
+        else:
+            self.dead = False
+            self.mesh.visible = True
+
+    def getHit(self, amt):
+        return self.setHealth(self.health-amt)
 
 class EnemyType(Enum):
     NORMAL = 0

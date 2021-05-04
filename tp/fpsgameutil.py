@@ -50,6 +50,7 @@ def initFps(app):
 
     # Player parameters
     app.health = 100
+    app.dead = False
     app.movementSpeed = 15
     app.hurtCooldown = 400
     app.lastHurt = time.time()
@@ -186,6 +187,7 @@ def getHurt(app, amount):
 
     if app.health <= 0:
         app.health = 0
+        app.dead = True
         showMsg(app, "You died.", 3, True, False)
 
     app.lastHurt = time.time()
@@ -272,6 +274,9 @@ def drawPolygon(app, canvas, polygon, color):
 #                 app.canvasImage.put(color, (ix, iy))
 
 def drawWeaponSprite(app, canvas):
+    if app.dead:
+        return
+         
     for weapon in app.weapons:
         if weapon.current and weapon.hasSprites:
             sprite = weapon.sprites[int(weapon.spriteState)]

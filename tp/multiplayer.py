@@ -31,6 +31,8 @@ def startMultiplayer(app):
     list(map(lambda mesh: mesh.setColor(Color(92, 28, 166)), otherRoom))
     app.drawables.extend(otherRoom)
 
+
+    # Server connection and network setup
     app.conn = net.connectToServer()
 
     app.state = dict()
@@ -43,6 +45,16 @@ def startMultiplayer(app):
 
     # Show intro message for this gamemode
     showMsg(app, "Welcome to multiplayer.", 3)
+
+    # Multiplayer game logic
+    app.respawnTimer = None
+    app.spawnPoints = [(np.array([10, 4, 10, 0], dtype=np.float64), 270),
+                       (np.array([90, 4, 190, 0], dtype=np.float64), 180),
+                       (np.array([90, 4, 10, 0], dtype=np.float64), 90),
+                       (np.array([10, 4, 190, 0], dtype=np.float64), 180)]
+
+
+    spawnAtASpawnPoint(app)
 
 # https://realpython.com/intro-to-python-threading/
 def clientThread(app):
@@ -59,9 +71,7 @@ def clientThread(app):
             app.state = result
             app.stateChanged = True
 
-
 def gameStateChanged(app):
-    print(app.state)
     app.stateChanged = False
     #idt is id but python already stole id >:(
     # make list of ids from state
@@ -77,6 +87,12 @@ def gameStateChanged(app):
         for idt in stateIdts:
             if str(idt) not in key and "health" in key:
                 app.health = app.state[key]
+                if app.health <= 0:
+                    app.health = 0
+                    app.dead = True
+                    showMsg(app, "You died.", 2, False, False)
+                    app.respawnTimer = time.time()+2
+
 
     # Add any new characters
     for idt in stateIdts:
@@ -104,15 +120,13 @@ def gameStateChanged(app):
 
         posKey = str(charIdt) + "pos"
         dirKey = str(charIdt) + "dir"
-        char.mesh.moveTo(app.state[posKey][0], app.state[posKey][1], app.state[posKey][2])
+        char.mesh.moveTo(app.state[posKey][0], app.state[posKey][1], app.state[posKey][2]) # -4 adjustment for height difference (this is silly)
         char.facePoint(app.state[posKey]+app.state[dirKey])
-        char.health = app.state[str(charIdt) + "health"]
+        _drop = char.setHealth(app.state[str(charIdt) + "health"])
 
     # This is still the deletion bit obviously
     for char in toRemove:
         app.chars.remove(char)
-        
-
 
 def multiplayer_appStopped(app):
     if hasattr(app, "conn") and isinstance(app.conn, socket.socket):
@@ -130,6 +144,23 @@ def multiplayer_keyReleased(app, event):
     key = event.key.lower()
     if key in app.heldKeys:
         app.heldKeys.remove(key)
+
+def respawn(app):
+    app.respawnTimer = None
+    app.msgMovementAllowed = True
+    spawnAtASpawnPoint(app)
+    app.dead = False
+    app.health = 100
+    updateServerInfo(app)
+
+def spawnAtASpawnPoint(app):
+    while True:
+        spawnPoint = random.choice(app.spawnPoints)
+        app.cam = spawnPoint[0]
+        app.yaw = spawnPoint[1]
+        break
+    recalculateCamDir(app)
+
 
 def processKeys(app, deltaTime):
     speed = app.movementSpeed*deltaTime
@@ -194,6 +225,9 @@ def multiplayer_timerFired(app):
 
     if app.stateChanged:
         gameStateChanged(app)
+
+    if app.respawnTimer != None and app.respawnTimer < time.time():
+        respawn(app)
 
     app.lastTimerTime = time.time()
 

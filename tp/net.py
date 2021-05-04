@@ -46,7 +46,7 @@ def updateClientStates(state, allSockets, excludeIndex = None):
         removeClientFromState(clientState, i, ["health"])
         sendInfo(clientState, client)
 
-    print("updated client state", state)
+    print("updated clients state")
 
 def updateState(state, allSockets, data, i):
     for key, value in data.items():
@@ -59,7 +59,6 @@ def updateState(state, allSockets, data, i):
 def removeClientFromState(state, i, skips = []):    
     keys = list(state.keys())
     for key in keys:
-        print(key[1:], key[1:] in skips)
         if key.startswith(str(i)) and not key[1:] in skips:
             state.pop(key)
 
@@ -85,6 +84,7 @@ def runServer():
             i = maybeReadables.index(readable)
             if readable is serv:
                 client, clientAddr = serv.accept()
+                updateClientStates(state, [client])
                 maybeReadables.append(client)
                 addresses.append(clientAddr)
                 buffers.append(bytearray())
@@ -101,6 +101,7 @@ def runServer():
                     removeClientFromState(state, i)
                 elif isinstance(result, dict):
                     updateState(state, maybeReadables, result, i)
+                    updateClientStates(state, maybeReadables)
 
 
 if __name__ == '__main__':
