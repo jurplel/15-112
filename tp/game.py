@@ -42,6 +42,9 @@ def startGame(app):
                  f"Elliminate the boss at the bottom right corner\n" +
                  "of the maze and recover the diamond.", 5)
 
+    pygame.mixer.music.load("res/d_e2m1.mp3")
+    pygame.mixer.music.play(-1)
+
 def game_sizeChanged(app):
     fpsSizeChanged(app)
 

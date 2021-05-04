@@ -1,0 +1,6 @@
+Doom sound effects: http://www.wolfensteingoodies.com/archives/olddoom/music.htm
+Music is converted from MIDI from that site for consistency between operating systems.
+Fonts from Google Fonts
+Heart model (Modified by me): https://www.turbosquid.com/3d-models/love-3d-model-1263821
+Pistol sprite: https://forum.zdoom.org/viewtopic.php?t=15080&p=1075597
+Hit sound is the classic Quake III hit sound

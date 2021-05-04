@@ -10,6 +10,7 @@ import json
 
 def changeMode(app, mode):
     app.mode = mode
+    pygame.mixer.music.fadeout(1000)
     if app.mode == "game":
         startGame(app)
     elif app.mode == "multiplayer":
@@ -18,9 +19,9 @@ def changeMode(app, mode):
         startMenu(app)
 
 def appStarted(app):
-    pygame.mixer.init()
-    pygame.mixer.music.set_volume(0.4)
     loadOptions(app)
+    pygame.mixer.init()
+    pygame.mixer.music.set_volume(app.musicVolume)
     app._title = "fps112"
     app.changeMode = changeMode
     app.changeMode(app, "menu")
@@ -41,6 +42,8 @@ def loadOptions(app):
     app.hudMargin = config.get("hudMargin", 40)
     app.mpAddr = config.get("ip", "0.0.0.0")
     app.mpPort = config.get("port", 52021)
+    app.musicVolume = config.get("musicVolume", 40)
+    app.effectVolume = config.get("effectVolume", 40)
 
 
 def main():

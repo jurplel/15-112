@@ -5,5 +5,7 @@
     "drawCrosshair": true,
     "hudMargin": 40,
     "ip": "0.0.0.0",
-    "port": 52021
+    "port": 52021,
+    "musicVolume": 0.4,
+    "effectVolume": 0.4
 }

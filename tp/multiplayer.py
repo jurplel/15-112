@@ -33,7 +33,6 @@ def startMultiplayer(app):
 
     app.maze = None
 
-
     # Server connection and network setup
     try:
         app.conn = net.connectToServer(app.mpAddr, app.mpPort)
@@ -43,6 +42,7 @@ def startMultiplayer(app):
         # Show intro message for this gamemode
         showMsg(app, "Welcome to multiplayer.", 3)
     except Exception as e:
+        app.conn = None
         showMsg(app, f"Encountered error: {e}", 3, True, False)
 
     app.state = dict()
@@ -60,6 +60,9 @@ def startMultiplayer(app):
                     #    (np.array([10, 4, 190, 0], dtype=np.float64), 180)]
 
     spawnAtASpawnPoint(app)
+
+    pygame.mixer.music.load("res/d_e1m2.mp3")
+    pygame.mixer.music.play(-1)
 
 
 # https://realpython.com/intro-to-python-threading/
@@ -92,11 +95,17 @@ def gameStateChanged(app):
     for key in app.state:
         for idt in stateIdts:
             if str(idt) not in key and "health" in key:
+                if app.state[key] == app.health:
+                    continue
+                if app.state[key] > 0 and app.state[key] < app.health:
+                    app.hurtSound.play()
+
                 app.health = app.state[key]
                 if app.health <= 0:
                     app.health = 0
                     app.dead = True
                     showMsg(app, "You died.", 2, False, False)
+                    app.deathSound.play()
                     app.respawnTimer = time.time()+2
 
 
@@ -136,6 +145,9 @@ def gameStateChanged(app):
         app.chars.remove(char)
 
 def multiplayer_appStopped(app):
+    tryEndingConnection(app)
+
+def tryEndingConnection(app):
     if hasattr(app, "conn") and isinstance(app.conn, socket.socket):
         print("Killing remaining connection...")
         app.conn.close() # Don't know why this causes exception but oh well
@@ -146,6 +158,7 @@ def multiplayer_sizeChanged(app):
 def multiplayer_keyPressed(app, event):
     key = event.key.lower()
     if key == "escape":
+        tryEndingConnection(app)
         app.changeMode(app, "menu")
         
     app.heldKeys.add(key)
@@ -177,6 +190,7 @@ def spawnAtASpawnPoint(app):
 
     recalculateCamDir(app)
     updateServerInfo(app)
+    
 
 
 def processKeys(app, deltaTime):
@@ -228,6 +242,9 @@ def forwardHitToServer(app, hitChar):
     net.sendInfo(info, app.conn)
 
 def updateServerInfo(app):
+    if app.conn == None:
+        return
+        
     info = {"pos": app.cam, "dir": app.camDir, "health": app.health}
     net.sendInfo(info, app.conn)
 

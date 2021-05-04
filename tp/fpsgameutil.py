@@ -55,6 +55,13 @@ def initFps(app):
     app.hurtCooldown = 400
     app.lastHurt = time.time()
 
+    app.hurtSound = pygame.mixer.Sound("res/dsnoway.wav")
+    app.hurtSound.set_volume(app.effectVolume)
+    app.deathSound = pygame.mixer.Sound("res/dsplpain.wav")
+    app.deathSound.set_volume(app.effectVolume)
+    app.hitSound = pygame.mixer.Sound("res/hitsound.wav")
+    app.hitSound.set_volume(app.effectVolume)
+
     # Last hit/damage indicator paremeters
     app.lastHitName = None
     app.lastHitHealth = None
@@ -108,11 +115,12 @@ def initPistol(app):
 
     # Pistol sprite
     # this sprite from https://forum.zdoom.org/viewtopic.php?f=4&t=15080&hilit=mac&start=32235
-    spritesheet = app.loadImage("res/weapon.png")
+    spritesheet = app.loadImage("res/pistol.png")
     sprites = spritesheetToSprite(spritesheet, 1, 4, spritesheet.height, spritesheet.width/4, 2, app.scaleImage)
 
     # Pistol sound
     sound = pygame.mixer.Sound("res/dspistol.wav")
+    sound.set_volume(app.effectVolume)
 
     # Pistol object
     pistol = Weapon(dmg, cooldown)
@@ -143,8 +151,12 @@ def fireWeapon(app, weapon):
             if mazeInfo != None and (mazeInfo.row, mazeInfo.col) != app.currentRoom:
                 return
 
+            app.hitSound.play()
             drop = char.getHit(weapon.damage)
             if drop != None:
+                if drop.sound != None:
+                    drop.sound.set_volume(app.effectVolume)
+                
                 if drop.mesh.data["pickup"] == "win":
                     drop.pickupCallback = lambda pos: pickupWin(app, pos)
                 elif drop.mesh.data["pickup"] == "health":
@@ -180,7 +192,10 @@ def getHurt(app, amount):
     if app.health <= 0:
         app.health = 0
         app.dead = True
+        app.deathSound.play()
         showMsg(app, "You died.", 3, True, False)
+    else:
+        app.hurtSound.play()
 
     app.lastHurt = time.time()
 
