@@ -93,7 +93,7 @@ def refreshGameState(app, state):
             if not idt in stateIdts:
                 stateIdts.append(idt)
         elif "fired" in key:
-            app.weapons[0].playSound()
+            app.weapons[state[key]].playSound()
 
     for key in state:
         for idt in stateIdts:
@@ -229,7 +229,7 @@ def processKeys(app, deltaTime):
         moved = relativeCamMove(app, drz, drx)
 
         # weird but i'm leaving this i guess
-        angleStep = app.movementSpeed*speed
+        angleStep = app.turnSpeed*speed
 
         # rotations        
         if "left" in app.heldKeys:
@@ -241,10 +241,13 @@ def processKeys(app, deltaTime):
         recalculateCamDir(app)
 
         if "space" in app.heldKeys:
-            fired, hit = fireWeapon(app, app.weapons[0])
+            fired, hit = fireWeapon(app, app.weapons[app.currentWeapon])
             if fired:
                 sendFireToServer(app)
             forwardHitToServer(app, hit)
+
+        if "r" in app.heldKeys:
+            switchWeapon(app)
 
         return moved
 
@@ -260,7 +263,7 @@ def forwardHitToServer(app, hitChar):
     net.sendInfo(info, app.conn)
 
 def sendFireToServer(app):
-    info = {"fired": "pistol"}
+    info = {"fired": app.currentWeapon}
     net.sendInfo(info, app.conn)
 
 def updateServerInfo(app):

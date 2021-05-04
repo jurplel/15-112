@@ -44,6 +44,7 @@ def loadOptions(app):
     app.mpPort = config.get("port", 52021)
     app.musicVolume = config.get("musicVolume", 40)
     app.effectVolume = config.get("effectVolume", 40)
+    app.turnSpeed = config.get("turnSpeed", 12)
 
 
 def main():

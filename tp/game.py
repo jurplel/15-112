@@ -95,8 +95,7 @@ def processKeys(app, deltaTime):
 
         moved = relativeCamMove(app, drz, drx)
 
-        # weird but i'm leaving this i guess
-        angleStep = app.movementSpeed*speed
+        angleStep = app.turnSpeed*speed
 
         # rotations        
         if "left" in app.heldKeys:
@@ -108,7 +107,10 @@ def processKeys(app, deltaTime):
         recalculateCamDir(app)
 
         if "space" in app.heldKeys:
-            fireWeapon(app, app.weapons[0])
+            fireWeapon(app, app.weapons[app.currentWeapon])
+
+        if "r" in app.heldKeys:
+            switchWeapon(app)
 
         return moved
 

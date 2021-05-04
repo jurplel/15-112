@@ -7,5 +7,6 @@
     "ip": "0.0.0.0",
     "port": 52021,
     "musicVolume": 0.4,
-    "effectVolume": 0.4
+    "effectVolume": 0.4,
+    "turnSpeed": 12
 }

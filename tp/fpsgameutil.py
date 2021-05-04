@@ -10,10 +10,10 @@ class Weapon:
     def __init__(self, damage, cooldown):
         self.damage = damage
         self.cooldown = cooldown
+        self.dmgFalloff = 50
         self.setSprites(None)
         self.setSound(None)
         self.lastShot = time.time()
-        self.current = False
 
     def setSprites(self, sprites = None):
         self.sprites = sprites
@@ -51,7 +51,7 @@ def initFps(app):
     # Player parameters
     app.health = 100
     app.dead = False
-    app.movementSpeed = 15
+    app.movementSpeed = 20
     app.hurtCooldown = 400
     app.lastHurt = time.time()
 
@@ -98,8 +98,10 @@ def initFps(app):
 
     # Initialize weapons
     app.weapons = []
+    app.weaponSwitchTimer = time.time()
+    app.currentWeapon = 0
     initPistol(app)
-    app.weapons[0].current = True
+    initShotgun(app)
 
 def fpsSizeChanged(app):
     setNewProjectionMatrix(app)
@@ -109,25 +111,48 @@ def recalculateCamDir(app):
     setNewViewMatrix(app)
 
 def initPistol(app):
-    # Pistol parameters
+    # Parameters
     dmg = 10
     cooldown = 400
 
-    # Pistol sprite
-    # this sprite from https://forum.zdoom.org/viewtopic.php?f=4&t=15080&hilit=mac&start=32235
-    spritesheet = app.loadImage("res/pistol.png")
-    sprites = spritesheetToSprite(spritesheet, 1, 4, spritesheet.height, spritesheet.width/4, 2, app.scaleImage)
+    # Sprite
+    spritesheet = app.loadImage("res/revolver.png")
+    num = 4
+    sprites = spritesheetToSprite(spritesheet, 1, num, spritesheet.height, spritesheet.width/num, 2, app.scaleImage)
 
-    # Pistol sound
+    # Sound
     sound = pygame.mixer.Sound("res/dspistol.wav")
     sound.set_volume(app.effectVolume)
 
-    # Pistol object
+    # Object
     pistol = Weapon(dmg, cooldown)
     pistol.setSprites(sprites)
     pistol.setSound(sound)
 
     app.weapons.append(pistol)
+
+def initShotgun(app):
+    # Parameters
+    dmg = 25
+    cooldown = 800
+
+    # Sprite
+    spritesheet = app.loadImage("res/spas.png")
+    num = 4
+    sprites = spritesheetToSprite(spritesheet, 1, num, spritesheet.height, spritesheet.width/num, 2, app.scaleImage)
+
+    # Sound
+    sound = pygame.mixer.Sound("res/dsshotgn.wav")
+    sound.set_volume(app.effectVolume)
+
+    # Object
+    shotgun = Weapon(dmg, cooldown)
+    shotgun.setSprites(sprites)
+    shotgun.setSound(sound)
+
+    shotgun.dmgFalloff = 8
+
+    app.weapons.append(shotgun)
 
 # Returns (fired, hitCharacter)
 def fireWeapon(app, weapon):
@@ -153,7 +178,13 @@ def fireWeapon(app, weapon):
                 return
 
             app.hitSound.play()
-            drop = char.getHit(weapon.damage)
+
+            # Damage falloff calculation
+            dist = ddd.vectorDist(char.mesh.avgVec, app.cam[0:3])
+            dmgMult = weapon.dmgFalloff/dist
+            dmgMult = min(1, dmgMult)
+
+            drop = char.getHit(weapon.damage*dmgMult)
             if drop != None:
                 if drop.sound != None:
                     drop.sound.set_volume(app.effectVolume)
@@ -173,6 +204,16 @@ def fireWeapon(app, weapon):
             return True, char
 
     return True, None
+
+def switchWeapon(app):
+    if time.time() < app.weaponSwitchTimer:
+        return
+
+    app.currentWeapon += 1
+    if app.currentWeapon >= len(app.weapons):
+        app.currentWeapon = 0
+
+    app.weaponSwitchTimer = time.time()+0.1
 
 def pickupWin(app, pos):
     showMsg(app, "You win!", 3, True, True)
@@ -287,11 +328,10 @@ def drawWeaponSprite(app, canvas):
     if app.dead:
         return
          
-    for weapon in app.weapons:
-        if weapon.current and weapon.hasSprites:
-            sprite = weapon.sprites[int(weapon.spriteState)]
-            canvas.create_image(app.width/2+sprite.width()/10, app.height-sprite.height()/2, image=sprite)
-            return
+    weapon = app.weapons[app.currentWeapon]
+    if weapon.hasSprites:
+        sprite = weapon.sprites[int(weapon.spriteState)]
+        canvas.create_image(app.width/2+sprite.width()/10, app.height-sprite.height()/2, image=sprite)
 
 def drawHealthAndMinimap(app, canvas):
     healthX = app.hudMargin
