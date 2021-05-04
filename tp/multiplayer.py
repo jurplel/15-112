@@ -109,6 +109,7 @@ def gameStateChanged(app):
 
         if not found:
             newChar = Character()
+            newChar.name = "Player"
             newChar.mesh.data["mpid"] = idt
             app.chars.append(newChar)
             app.drawables.append(newChar.mesh)
