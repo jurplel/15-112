@@ -23,6 +23,12 @@ def sendInfo(info: dict, socket: socket.socket):
     socket.sendall(msgLength)
     socket.sendall(msg)
 
+def sendToAllClients(info: dict, allSockets, excludeIndex = None):
+    for i, client in enumerate(allSockets):
+        if i == 0 or i == excludeIndex:
+            continue
+        sendInfo(info, socket)
+
 def recvMsg(socket: socket.socket, buffer: bytearray):
     headerLen = 2
     received = socket.recv(4096)
@@ -30,12 +36,22 @@ def recvMsg(socket: socket.socket, buffer: bytearray):
         return "EOF"
 
     buffer.extend(received)
-    msgLength = int.from_bytes(buffer[0:headerLen], byteorder="big", signed=False)
-    if len(buffer) >= headerLen+msgLength:
-        data = pickle.loads(buffer[headerLen:headerLen+msgLength])
-        for i in range(headerLen+msgLength):
-            buffer.pop(0)
-        return data
+
+    result = []
+    while True:
+        msgLength = int.from_bytes(buffer[0:headerLen], byteorder="big", signed=False)
+        if len(buffer) >= headerLen+msgLength:
+            data = pickle.loads(buffer[headerLen:headerLen+msgLength])
+            for i in range(headerLen+msgLength):
+                buffer.pop(0)
+            result.append(data)
+        else:
+            break
+
+    if len(result) > 0:
+        return result
+        
+    
 
 def updateClientStates(state, allSockets, excludeIndex = None):
     for i, client in enumerate(allSockets):
@@ -45,6 +61,14 @@ def updateClientStates(state, allSockets, excludeIndex = None):
         clientState = copy.deepcopy(state)
         removeClientFromState(clientState, i, ["health"])
         sendInfo(clientState, client)
+
+    toRemove = []
+    for key, value in state.items():
+        if "fired" in key:
+            toRemove.append(key)
+
+    for key in toRemove:
+        state.pop(key)
 
     print("updated clients state")
 
@@ -91,6 +115,7 @@ def runServer():
                 print(f"{clientAddr[0]} connected.")
             else:
                 result = recvMsg(readable, buffers[i])
+                print(result)
                 # Disconnect on EOF
                 if result == "EOF":
                     readable.close()
@@ -99,9 +124,10 @@ def runServer():
                     maybeReadables.pop(i)
                     buffers.pop(i)
                     removeClientFromState(state, i)
-                elif isinstance(result, dict):
-                    updateState(state, maybeReadables, result, i)
-                    updateClientStates(state, maybeReadables)
+                elif isinstance(result, list):
+                    for data in result:
+                        updateState(state, maybeReadables, data, i)
+                        updateClientStates(state, maybeReadables)
 
 
 if __name__ == '__main__':

@@ -33,6 +33,10 @@ def startMultiplayer(app):
 
     app.maze = None
 
+    # State-holding info that needs to be initialized before the recv thread
+    app.stateBacklog = []
+    app.stateChanged = False
+
     # Server connection and network setup
     try:
         app.conn = net.connectToServer(app.mpAddr, app.mpPort)
@@ -45,15 +49,12 @@ def startMultiplayer(app):
         app.conn = None
         showMsg(app, f"Encountered error: {e}", 3, True, False)
 
-    app.state = dict()
-    app.stateChanged = False
-
-
-
 
 
     # Multiplayer game logic
+
     app.respawnTimer = None
+    app.respawnInvicibilityTil = None
     app.spawnPoints = [(np.array([10, 4, 10, 0], dtype=np.float64), 270),
                        (np.array([90, 4, 190, 0], dtype=np.float64), 180)]
                     #    (np.array([90, 4, 10, 0], dtype=np.float64), 90),
@@ -68,6 +69,7 @@ def startMultiplayer(app):
 # https://realpython.com/intro-to-python-threading/
 def clientThread(app):
     buf = bytearray()
+    alreadyReadBuffer = []
     maybeReadables = [app.conn]
     while True:
         result = net.recvMsg(maybeReadables[0], buf)
@@ -76,31 +78,35 @@ def clientThread(app):
             app.conn.close()
             print(f"Disconnected from server!")
             return
-        elif isinstance(result, dict):
-            app.state = result
+        elif isinstance(result, list):
+            app.stateBacklog.extend(result)
             app.stateChanged = True
 
-def gameStateChanged(app):
-    app.stateChanged = False
+def refreshGameState(app, state):
     #idt is id but python already stole id >:(
     # make list of ids from state
     stateIdts = []
-    for key in app.state:
+    for key in state:
         found = False
         if "pos" in key:
             idt = int(key[0])
             if not idt in stateIdts:
                 stateIdts.append(idt)
+        elif "fired" in key:
+            app.weapons[0].playSound()
 
-    for key in app.state:
+    for key in state:
         for idt in stateIdts:
             if str(idt) not in key and "health" in key:
-                if app.state[key] == app.health:
+                if state[key] == app.health:
                     continue
-                if app.state[key] > 0 and app.state[key] < app.health:
+                if app.respawnInvicibilityTil != None and time.time() < app.respawnInvicibilityTil:
+                    updateServerInfo(app)
+                    continue
+                if state[key] > 0 and state[key] < app.health:
                     app.hurtSound.play()
 
-                app.health = app.state[key]
+                app.health = state[key]
                 if app.health <= 0:
                     app.health = 0
                     app.dead = True
@@ -136,13 +142,22 @@ def gameStateChanged(app):
 
         posKey = str(charIdt) + "pos"
         dirKey = str(charIdt) + "dir"
-        char.mesh.moveTo(app.state[posKey][0], app.state[posKey][1], app.state[posKey][2]) # -4 adjustment for height difference (this is silly)
-        char.facePoint(app.state[posKey]+app.state[dirKey])
-        _drop = char.setHealth(app.state[str(charIdt) + "health"])
+        char.mesh.moveTo(state[posKey][0], state[posKey][1], state[posKey][2]) # -4 adjustment for height difference (this is silly)
+        char.facePoint(state[posKey]+state[dirKey])
+        _drop = char.setHealth(state[str(charIdt) + "health"])
 
     # This is still the deletion bit obviously
     for char in toRemove:
         app.chars.remove(char)
+
+def handleStateChange(app):
+    loopedCount = 0 # I actually dont trust len in this async situation
+    for state in app.stateBacklog:
+        loopedCount += 1
+        refreshGameState(app, state)
+
+    app.stateBacklog = app.stateBacklog[loopedCount:]
+    app.stateChanged = False
 
 def multiplayer_appStopped(app):
     tryEndingConnection(app)
@@ -170,6 +185,7 @@ def multiplayer_keyReleased(app, event):
 
 def respawn(app):
     app.respawnTimer = None
+    app.respawnInvicibilityTil = time.time()+2
     app.msgMovementAllowed = True
     spawnAtASpawnPoint(app)
     app.dead = False
@@ -225,8 +241,10 @@ def processKeys(app, deltaTime):
         recalculateCamDir(app)
 
         if "space" in app.heldKeys:
-            hit = fireWeapon(app, app.weapons[0])
-            forwardHitToServer(app, hit)            
+            fired, hit = fireWeapon(app, app.weapons[0])
+            if fired:
+                sendFireToServer(app)
+            forwardHitToServer(app, hit)
 
         return moved
 
@@ -239,6 +257,10 @@ def forwardHitToServer(app, hitChar):
         return
 
     info = {f"{mpid}health": hitChar.health}
+    net.sendInfo(info, app.conn)
+
+def sendFireToServer(app):
+    info = {"fired": "pistol"}
     net.sendInfo(info, app.conn)
 
 def updateServerInfo(app):
@@ -258,7 +280,7 @@ def multiplayer_timerFired(app):
             updateServerInfo(app)
 
     if app.stateChanged:
-        gameStateChanged(app)
+        handleStateChange(app)
 
     if app.respawnTimer != None and app.respawnTimer < time.time():
         respawn(app)

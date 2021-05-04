@@ -129,10 +129,11 @@ def initPistol(app):
 
     app.weapons.append(pistol)
 
+# Returns (fired, hitCharacter)
 def fireWeapon(app, weapon):
     sinceLastFired = time.time() - weapon.lastShot
     if sinceLastFired*1000 < weapon.cooldown:
-        return
+        return False, None
 
     weapon.lastShot = time.time()
     if weapon.hasSprites:
@@ -169,7 +170,9 @@ def fireWeapon(app, weapon):
             app.lastHitHealth = char.health
             app.lastHitMaxHealth = char.maxHealth
             app.lastHitTime = time.time()+3
-            return char
+            return True, char
+
+    return True, None
 
 def pickupWin(app, pos):
     showMsg(app, "You win!", 3, True, True)
