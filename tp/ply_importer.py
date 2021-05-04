@@ -4,10 +4,7 @@ import numpy as np
 
 from ddd import Mesh
 
-# From here: https://www.cs.cmu.edu/~112/notes/notes-strings.html#basicFileIO
-def readFile(path):
-    with open(path, "rt") as f:
-        return f.read()
+from util import readFile
 
 # Imports PLY 3d model files
 # Works with exports from Blender in ASCII mode (Y up, Z forward for this game)

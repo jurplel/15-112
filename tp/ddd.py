@@ -164,6 +164,8 @@ class Mesh:
                 lightedColor = self.color * lightFactor
 
             # To camera space
+            # These matmuls allow me to broadcast over the whole polygon instead of
+            # looping--saving tons of valuable processing time on the redraw
             np.matmul(poly, viewMatrix, poly)
 
             # The end of the polygon processing pipeline--may be run on multiple polygons so thats why its here

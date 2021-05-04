@@ -77,14 +77,6 @@ def initFps(app):
     app.camDir = np.array([0, 0, 1, 0], dtype=np.float64)
     app.yaw = 0
 
-
-    # Options that can be customizable
-    app.fov = 90
-    app.wireframe = False # I recommend trying this option!
-    app.drawFps = True
-    app.drawCrosshair = True
-    app.hudMargin = 40
-
     # Default light direction
     app.light = np.array([1, -0.5, 1, 0], dtype=np.float64)
     ddd.normVec(app.light)

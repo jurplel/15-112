@@ -33,18 +33,23 @@ def startMultiplayer(app):
 
 
     # Server connection and network setup
-    app.conn = net.connectToServer()
+    try:
+        app.conn = net.connectToServer(app.mpAddr, app.mpPort)
+
+        app.netThread = threading.Thread(target=clientThread, args=(app,))
+        app.netThread.start()
+        updateServerInfo(app)
+        # Show intro message for this gamemode
+        showMsg(app, "Welcome to multiplayer.", 3)
+    except Exception as e:
+        showMsg(app, f"Encountered error: {e}", 3, True, False)
 
     app.state = dict()
     app.stateChanged = False
-    app.netThread = threading.Thread(target=clientThread, args=(app,))
-    app.netThread.start()
-
-    updateServerInfo(app)
 
 
-    # Show intro message for this gamemode
-    showMsg(app, "Welcome to multiplayer.", 3)
+
+
 
     # Multiplayer game logic
     app.respawnTimer = None

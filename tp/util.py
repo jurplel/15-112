@@ -6,6 +6,11 @@ import pygame
 
 from PIL import ImageTk
 
+# From here: https://www.cs.cmu.edu/~112/notes/notes-strings.html#basicFileIO
+def readFile(path):
+    with open(path, "rt") as f:
+        return f.read()
+
 # from https://www.cs.cmu.edu/~112/notes/notes-2d-lists.html#creating2dLists
 def make2dList(rows, cols, val = None):
     return [ ([val] * cols) for row in range(rows) ]
@@ -86,7 +91,6 @@ def spritesheetToSprite(spritesheet, rows, cols, height, width, scale = 1, scale
             img = ImageTk.PhotoImage(sprite)
             weaponSprites.append(img)
     return weaponSprites
-
 
 # Copy pasted directly from https://www.cs.cmu.edu/~112/notes/notes-animations-part4.html#playingSounds
 class Sound(object):
