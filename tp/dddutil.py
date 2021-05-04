@@ -113,3 +113,12 @@ def vecMagnitude(vec: np.array):
         total += term**2
     
     return math.sqrt(total)
+
+def tkDrawPolygon(app, canvas, polygon, color):
+    v0 = polygon[0]
+    v1 = polygon[1]
+    v2 = polygon[2]
+
+    outlineColor = "black" if app.wireframe else color
+    canvas.create_polygon(v0[0], v0[1], v1[0], v1[1], v2[0], v2[1], 
+                        outline=outlineColor, fill=color)

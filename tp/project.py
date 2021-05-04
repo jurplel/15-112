@@ -9,6 +9,7 @@ from util import readFile
 import json
 
 def changeMode(app, mode):
+    loadOptions(app)
     app.mode = mode
     pygame.mixer.music.fadeout(1000)
     if app.mode == "game":
@@ -26,7 +27,6 @@ def appStarted(app):
     app.changeMode = changeMode
     app.changeMode(app, "menu")
     
-
 
 def loadOptions(app):
     # load options from config file

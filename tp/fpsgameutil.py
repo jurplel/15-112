@@ -213,7 +213,7 @@ def switchWeapon(app):
     if app.currentWeapon >= len(app.weapons):
         app.currentWeapon = 0
 
-    app.weaponSwitchTimer = time.time()+0.1
+    app.weaponSwitchTimer = time.time()+0.2
 
 def pickupWin(app, pos):
     showMsg(app, "You win!", 3, True, True)
@@ -281,18 +281,8 @@ def redraw3D(app, canvas):
     # Draw in order with painter's algorithm
     readyPolys.sort(key=ddd.paintersAlgorithm)
 
-
     # List comprehensions are potentially faster than for loops
-    [drawPolygon(app, canvas, x[0], x[1]) for x in readyPolys]
-
-def drawPolygon(app, canvas, polygon, color):
-    v0 = polygon[0]
-    v1 = polygon[1]
-    v2 = polygon[2]
-
-    outlineColor = "black" if app.wireframe else color
-    canvas.create_polygon(v0[0], v0[1], v1[0], v1[1], v2[0], v2[1], 
-                        outline=outlineColor, fill=color)
+    [ddd.tkDrawPolygon(app, canvas, x[0], x[1]) for x in readyPolys]
 
 ## Remains of an attempt at starting texturing/depth-buffering--ended up with <1fps so I gave up
 # def drawPolygonOnImage(app, polygon, color):
@@ -443,7 +433,16 @@ def relativeCamMove(app, drz, drx):
 
     app.cam += sidewaysCamDir * drx
 
-    if ddd.pointCollidesWithOtherMeshes(app.cam, app.drawables, 1):
+    # Check a shorter distance for low framerates
+    # It's still possible to clip through walls but much harder with this
+    testdrz = min(min(drz, 0.2), max(drz, -0.2), key=abs)
+    testdrx = min(min(drx, 0.2), max(drx, -0.2), key=abs)
+    testCam = copy.deepcopy(oldCam) + app.camDir * testdrz
+    testCam += sidewaysCamDir * testdrx
+
+    # You can't walk through walls
+    if (ddd.pointCollidesWithOtherMeshes(testCam, app.drawables, 1) or
+        ddd.pointCollidesWithOtherMeshes(app.cam, app.drawables, 1)):
         app.cam = oldCam
         return False
 

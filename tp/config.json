@@ -1,7 +1,7 @@
 {
     "fov": 90,
-    "wireframe": false,
-    "drawFps": false,
+    "wireframe": true,
+    "drawFps": true,
     "drawCrosshair": true,
     "hudMargin": 40,
     "ip": "0.0.0.0",

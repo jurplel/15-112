@@ -62,7 +62,7 @@ def startMultiplayer(app):
 
     spawnAtASpawnPoint(app)
 
-    pygame.mixer.music.load("res/d_e1m2.mp3")
+    pygame.mixer.music.load("res/d_e1m2.ogg")
     pygame.mixer.music.play(-1)
 
 
@@ -211,7 +211,11 @@ def spawnAtASpawnPoint(app):
 
 def processKeys(app, deltaTime):
     speed = app.movementSpeed*deltaTime
+    turnSpeed = app.turnSpeed*speed
     if app.heldKeys:
+        if "tab" in app.heldKeys:
+            speed *= 2
+            turnSpeed *= 1.5
         # delta relative x/z
         drx = 0
         drz = 0
@@ -219,6 +223,8 @@ def processKeys(app, deltaTime):
         if "w" in app.heldKeys:
             drz += speed
         elif "s" in app.heldKeys:
+            if "tab" in app.heldKeys:
+                speed *= 0.5
             drz -= speed
 
         if "a" in app.heldKeys:
@@ -228,15 +234,11 @@ def processKeys(app, deltaTime):
 
         moved = relativeCamMove(app, drz, drx)
 
-        # weird but i'm leaving this i guess
-        angleStep = app.turnSpeed*speed
-
         # rotations        
         if "left" in app.heldKeys:
-            app.yaw += angleStep
+            app.yaw += turnSpeed
         elif "right" in app.heldKeys:
-            app.yaw -= angleStep
-
+            app.yaw -= turnSpeed
 
         recalculateCamDir(app)
 
