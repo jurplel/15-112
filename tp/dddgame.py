@@ -52,7 +52,7 @@ class Character:
     def __init__(self, health = 100):
         self.mesh = importPly("res/char.ply")
         self.mesh.data["ischaracter"] = True
-        self.health = health
+        self._health = health
         self.maxHealth = health
         # default color for characters
         self.mesh.color = Color(214, 124, 13)
@@ -60,6 +60,21 @@ class Character:
         self.deathCallback = None
         self.dead = False
         self.name = "undefined"
+
+    @property
+    def health(self):
+        return self._health
+
+    @health.setter
+    def health(self, new_value):
+        self._health = new_value
+        if self._health <= 0:
+            self._health = 0
+            self.dead = True
+            self.mesh.visible = False
+            if self.deathCallback != None:
+                return self.deathCallback(copy.deepcopy(self.mesh.avgVec), self.mesh.color, self.mesh.data)
+
 
     # https://math.stackexchange.com/questions/654315/how-to-convert-a-dot-product-of-two-vectors-to-the-angle-between-the-vectors
     # second answer for formula for angle diff to 2pi
@@ -84,19 +99,11 @@ class Character:
 
 
     def getHit(self, amt):
-        avgVec = copy.deepcopy(self.mesh.avgVec)
         if self.dead:
             return
 
         if self.health > 0:
             self.health -= amt
-            
-        if self.health <= 0:
-            self.health = 0
-            self.dead = True
-            self.mesh.visible = False
-            if self.deathCallback != None:
-                return self.deathCallback(avgVec, self.mesh.color, self.mesh.data)
 
 class EnemyType(Enum):
     NORMAL = 0
@@ -296,7 +303,7 @@ def createMaze(rows, cols, roomHeight, roomWidth, roomDepth):
     return maze, mazeColors, meshes
 
 # Returns 4 meshes without doorway, add 2 for each doorway
-def createRoom(height, width, depth, doorways = [], floor = False, ceiling = True):
+def createRoom(height, width, depth, doorways = [], doors = True, floor = False, ceiling = True):
     plane0 = createQuadPlane(depth, height)
     plane1 = createQuadPlane(depth, height)
     plane2 = createQuadPlane(depth, width)
@@ -304,16 +311,20 @@ def createRoom(height, width, depth, doorways = [], floor = False, ceiling = Tru
     for doorway in doorways:
         if doorway == Direction.WEST:
             plane0 = createDoorway(depth, height)
-            plane0.extend(createDoor(height))
+            if doors:
+                plane0.extend(createDoor(height))
         elif doorway == Direction.EAST:
             plane1 = createDoorway(depth, height)
-            plane1.extend(createDoor(height))
+            if doors:
+                plane1.extend(createDoor(height))
         elif doorway == Direction.SOUTH:
             plane2 = createDoorway(depth, width)
-            plane2.extend(createDoor(width))
+            if doors:
+                plane2.extend(createDoor(width))
         elif doorway == Direction.NORTH:
             plane3 = createDoorway(depth, width)
-            plane3.extend(createDoor(width))
+            if doors:
+                plane3.extend(createDoor(width))
 
     # Since doorway may be a list, all of these planes are stored as lists of meshes
     
@@ -365,6 +376,14 @@ def createDoorway(height, width):
     planes = plane0 + plane1 + plane2
 
     return planes
+
+def createTwoSidedQuadPlane(height, width, maxWidth = 25):
+    plane = createQuadPlane(height, width)
+    list(map(lambda mesh: mesh.rotateY(180), plane))
+    list(map(lambda mesh: mesh.translate(width, 0, 0), plane))
+    plane.extend(createQuadPlane(height, width))
+    return plane
+    
 
 def createQuadPlane(height, width, maxWidth = 25):
     meshes = []

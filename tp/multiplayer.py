@@ -8,9 +8,28 @@ import socket
 def startMultiplayer(app):
     initFps(app)
 
-    # Room for testing
-    room = createRoom(100, 100, 20)
+    # Build PvP level
+    room = createRoom(100, 200, 30, [Direction.EAST], False, False, False)
+    list(map(lambda mesh: mesh.setColor(Color(48, 161, 58)), room))
+
     app.drawables.extend(room)
+    
+    wall0 = createTwoSidedQuadPlane(10, 60)
+    list(map(lambda mesh: mesh.translate(0, 0, 50), wall0))
+    wall1 = createTwoSidedQuadPlane(10, 80)
+    list(map(lambda mesh: mesh.translate(20, 0, 80), wall1))
+    wall2 = createTwoSidedQuadPlane(10, 50)
+    list(map(lambda mesh: mesh.rotateY(90), wall2))
+    list(map(lambda mesh: mesh.translate(70, 0, 150), wall2))
+    walls = wall0 + wall1 + wall2
+    list(map(lambda mesh: mesh.setColor(Color(89, 58, 21)), walls))
+
+    app.drawables.extend(walls)
+
+    otherRoom = createRoom(60, 30, 30, [Direction.WEST], False)
+    list(map(lambda mesh: mesh.translate(20, 0, 200), otherRoom))
+    list(map(lambda mesh: mesh.setColor(Color(92, 28, 166)), otherRoom))
+    app.drawables.extend(otherRoom)
 
     app.conn = net.connectToServer()
 
