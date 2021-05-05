@@ -40,6 +40,7 @@ def startMultiplayer(app):
     # Server connection and network setup
     try:
         app.conn = net.connectToServer(app.mpAddr, app.mpPort)
+        app.conn.settimeout(1)
 
         app.netThread = threading.Thread(target=clientThread, args=(app,))
         app.netThread.start()
@@ -64,6 +65,9 @@ def startMultiplayer(app):
 
     pygame.mixer.music.load("res/d_e1m2.ogg")
     pygame.mixer.music.play(-1)
+
+    # Unlock all weapons
+    app.weaponsUnlocked = [True] * len(app.weapons)
 
 
 # https://realpython.com/intro-to-python-threading/
@@ -138,7 +142,6 @@ def refreshGameState(app, state):
             app.drawables.remove(char.mesh)
             toRemove.append(char)
             continue
-
 
         posKey = str(charIdt) + "pos"
         dirKey = str(charIdt) + "dir"

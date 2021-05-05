@@ -30,6 +30,16 @@ def dropHealth(position, color, meshData):
     heart.mesh.translate(position[0], position[1], position[2])
     heart.sound = pygame.mixer.Sound("res/dsitemup.wav")
     return heart
+
+def dropWeapon(position, color, meshData):
+    weapon = Drop(importPly("res/cube.ply"))
+    weapon.mesh.color = color
+    weapon.mesh.scale(1, 0.5, 2)
+    weapon.mesh.data["mazeinfo"] = meshData["mazeinfo"]
+    weapon.mesh.data["pickup"] = "weapon"
+    weapon.mesh.translate(position[0], position[1], position[2])
+    weapon.sound = pygame.mixer.Sound("res/dswpnup.wav")
+    return weapon
     
 class Drop:
     def __init__(self, mesh, pickupCallback = None):
@@ -262,15 +272,27 @@ def populateMazeWithEnemies(maze, mazeColors, meshes, roomHeight, roomWidth):
 
     return enemies
 
-def setupFinalRoomOfMaze(maze, mazeColors, meshes, roomHeight, roomWidth):
+def setupMazeSpecial(maze, mazeColors, meshes, roomHeight, roomWidth):
     enemies = []
+    drops = []
 
     row = len(maze)-1
     col = len(maze[0])-1
 
     makeRandomEnemyInMazeRoom(maze, meshes, enemies, mazeColors, row, col, roomHeight, roomWidth, EnemyType.BOSS)
     enemies[-1].deathCallback = dropDiamond
-    return enemies
+
+    weaponpos0 = np.array([roomHeight*(row+1)-10, 0, 10])
+    weaponpos1 = np.array([10, 0, roomWidth*(col+1)-10])
+
+    weapon0 = dropWeapon(weaponpos0, mazeColors[row][0].complementary(), {"mazeinfo":MazeInfo(row, 0, maze[row][0].dirs)})
+    meshes.append(weapon0.mesh)
+    weapon1 = dropWeapon(weaponpos1, mazeColors[0][col].complementary(), {"mazeinfo":MazeInfo(0, col, maze[0][col].dirs)})
+    meshes.append(weapon1.mesh)
+
+    drops.append(weapon0)
+    drops.append(weapon1)
+    return enemies, drops
 
 def setupMaze(meshes, rows, cols, roomHeight, roomWidth, roomDepth):
     # Make a maze
@@ -281,9 +303,11 @@ def setupMaze(meshes, rows, cols, roomHeight, roomWidth, roomDepth):
     enemies = populateMazeWithEnemies(maze, mazeColors, meshes, roomHeight, roomWidth)
     
     # Set up the final room with boss and stuff
-    enemies.extend(setupFinalRoomOfMaze(maze, mazeColors, meshes, roomHeight, roomWidth))
+    moreEnemies, drops = setupMazeSpecial(maze, mazeColors, meshes, roomHeight, roomWidth)
+
+    enemies.extend(moreEnemies)
     
-    return maze, enemies
+    return maze, enemies, drops
 
 def createMaze(rows, cols, roomHeight, roomWidth, roomDepth):
     maze = genMaze(rows, cols)

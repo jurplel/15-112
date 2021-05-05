@@ -13,19 +13,23 @@ def startGame(app):
     initFps(app)
     
     # Initialize maze
-    app.mazeRows = random.randint(4, 8)
-    app.mazeCols = random.randint(4, 8)
+    app.mazeRows = 2
+    app.mazeCols = 2
     app.roomHeight = 50
     app.roomWidth = 100
     app.roomDepth = 20
 
     meshes = []
-    app.maze, enemies = setupMaze(meshes, app.mazeRows, app.mazeCols, app.roomHeight, app.roomWidth, app.roomDepth)
+    app.maze, enemies, drops = setupMaze(meshes, app.mazeRows, app.mazeCols, app.roomHeight, app.roomWidth, app.roomDepth)
     
     # Move the whole maze over a bit to make room for the player
     # and move it closer to our "ground"
     app.chars.extend(enemies)
     app.drawables.extend(meshes)
+    
+    app.drops.extend(drops)
+    for drop in drops:
+        drop.pickupCallback = lambda pos: pickupWeapon(app)
 
     for char in app.chars:
         if isinstance(char, Enemy):

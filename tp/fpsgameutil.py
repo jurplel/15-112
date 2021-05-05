@@ -102,6 +102,7 @@ def initFps(app):
     app.currentWeapon = 0
     initPistol(app)
     initShotgun(app)
+    app.weaponsUnlocked = [True] + ([False] * (len(app.weapons)-1))
 
 def fpsSizeChanged(app):
     setNewProjectionMatrix(app)
@@ -193,6 +194,8 @@ def fireWeapon(app, weapon):
                     drop.pickupCallback = lambda pos: pickupWin(app, pos)
                 elif drop.mesh.data["pickup"] == "health":
                     drop.pickupCallback = lambda pos: pickupHealth(app)
+                elif drop.mesh.data["pickup"] == "weapon":
+                    drop.pickupCallback = lambda pos: pickupWeapon(app)
                 app.drops.append(drop)
                 app.drawables.append(drop.mesh)
 
@@ -209,9 +212,17 @@ def switchWeapon(app):
     if time.time() < app.weaponSwitchTimer:
         return
 
-    app.currentWeapon += 1
-    if app.currentWeapon >= len(app.weapons):
-        app.currentWeapon = 0
+    loopCount = 0
+    while loopCount < 10:
+        loopCount += 1
+        app.currentWeapon += 1
+        if app.currentWeapon >= len(app.weapons):
+            app.currentWeapon = 0
+        if app.weaponsUnlocked[app.currentWeapon] == True:
+            break
+
+    if loopCount >= 10:
+        raise Exception("Couldn't find unlocked weapon!")
 
     app.weaponSwitchTimer = time.time()+0.2
 
@@ -222,6 +233,13 @@ def pickupHealth(app):
     app.health += 50
     if app.health > 100:
         app.health = 100
+
+def pickupWeapon(app):
+    for i, wep in enumerate(app.weaponsUnlocked):
+        if wep == False:
+            app.weaponsUnlocked[i] = True
+            break
+
 
 def getHurt(app, amount):
     if app.health <= 0:

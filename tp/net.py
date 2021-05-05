@@ -29,9 +29,13 @@ def sendToAllClients(info: dict, allSockets, excludeIndex = None):
             continue
         sendInfo(info, socket)
 
-def recvMsg(socket: socket.socket, buffer: bytearray):
+def recvMsg(sock: socket.socket, buffer: bytearray):
     headerLen = 2
-    received = socket.recv(4096)
+    try:
+        received = sock.recv(4096)
+    except socket.timeout: 
+        return "EOF"
+
     if not received:
         return "EOF"
 
@@ -103,7 +107,7 @@ def runServer():
     buffers = [bytearray()]
     while True:
         updateClientStates(state, maybeReadables)
-        readables, writables, errs = select.select(maybeReadables, [], [], 60)
+        readables, _, _ = select.select(maybeReadables, [], [], 60)
         for readable in readables:
             i = maybeReadables.index(readable)
             if readable is serv:
