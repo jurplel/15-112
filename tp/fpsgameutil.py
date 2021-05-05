@@ -10,10 +10,10 @@ class Weapon:
     def __init__(self, damage, cooldown):
         self.damage = damage
         self.cooldown = cooldown
-        self.dmgFalloff = 50
+        self.dmgFalloff = 20
         self.setSprites(None)
         self.setSound(None)
-        self.lastShot = time.time()
+        self.spriteOffset = 0
 
     def setSprites(self, sprites = None):
         self.sprites = sprites
@@ -100,9 +100,11 @@ def initFps(app):
     app.weapons = []
     app.weaponSwitchTimer = time.time()
     app.currentWeapon = 0
+    app.lastShot = time.time()
     initPistol(app)
     initShotgun(app)
-    app.weaponsUnlocked = [True] + ([False] * (len(app.weapons)-1))
+    initRifle(app)
+    app.weaponsUnlocked = [True] + ([False] * (len(app.weapons)-1)) # TESTING
 
 def fpsSizeChanged(app):
     setNewProjectionMatrix(app)
@@ -130,11 +132,13 @@ def initPistol(app):
     pistol.setSprites(sprites)
     pistol.setSound(sound)
 
+    pistol.spriteOffset = 0.1
+
     app.weapons.append(pistol)
 
 def initShotgun(app):
     # Parameters
-    dmg = 25
+    dmg = 30
     cooldown = 800
 
     # Sprite
@@ -151,17 +155,44 @@ def initShotgun(app):
     shotgun.setSprites(sprites)
     shotgun.setSound(sound)
 
+    shotgun.spriteOffset = -0.12
+
     shotgun.dmgFalloff = 8
 
     app.weapons.append(shotgun)
 
+def initRifle(app):
+    # Parameters
+    dmg = 10
+    cooldown = 200
+
+    # Sprite
+    spritesheet = app.loadImage("res/rifle.png")
+    num = 2
+    sprites = spritesheetToSprite(spritesheet, 1, num, spritesheet.height, spritesheet.width/num, 2, app.scaleImage)
+
+    # Sound
+    sound = pygame.mixer.Sound("res/dsriflel.wav")
+    sound.set_volume(app.effectVolume)
+
+    # Object
+    rifle = Weapon(dmg, cooldown)
+    rifle.setSprites(sprites)
+    rifle.setSound(sound)
+
+    rifle.spriteOffset = -0.17
+
+    rifle.dmgFalloff = 50
+
+    app.weapons.append(rifle)
+
 # Returns (fired, hitCharacter)
 def fireWeapon(app, weapon):
-    sinceLastFired = time.time() - weapon.lastShot
+    sinceLastFired = time.time() - app.lastShot
     if sinceLastFired*1000 < weapon.cooldown:
         return False, None
 
-    weapon.lastShot = time.time()
+    app.lastShot = time.time()
     if weapon.hasSprites:
         weapon.spriteState = 1
     
@@ -339,7 +370,7 @@ def drawWeaponSprite(app, canvas):
     weapon = app.weapons[app.currentWeapon]
     if weapon.hasSprites:
         sprite = weapon.sprites[int(weapon.spriteState)]
-        canvas.create_image(app.width/2+sprite.width()/10, app.height-sprite.height()/2, image=sprite)
+        canvas.create_image(app.width/2+sprite.width()*weapon.spriteOffset, app.height-sprite.height()/2, image=sprite)
 
 def drawHealthAndMinimap(app, canvas):
     healthX = app.hudMargin

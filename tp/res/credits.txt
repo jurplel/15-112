@@ -4,4 +4,5 @@ Fonts from Google Fonts
 Heart model (Modified by me): https://www.turbosquid.com/3d-models/love-3d-model-1263821
 Revolver sprite: https://forum.zdoom.org/viewtopic.php?t=15080&p=1075597
 Shotgun sprite: https://forum.zdoom.org/viewtopic.php?f=37&t=37556&start=240
+Rifle sprite and sound: https://www.realm667.com/index.php/en/armory-mainmenu-157-97317/doom-style-mainmenu-158-94349/644-zombieman-rifle (even compressed sound to 11khz to match!)
 Hit sound is the classic Quake III hit sound

@@ -13,8 +13,8 @@ def startGame(app):
     initFps(app)
     
     # Initialize maze
-    app.mazeRows = 2
-    app.mazeCols = 2
+    app.mazeRows = random.randint(4, 8)
+    app.mazeCols = random.randint(4, 8)
     app.roomHeight = 50
     app.roomWidth = 100
     app.roomDepth = 20
@@ -119,7 +119,7 @@ def processKeys(app, deltaTime):
             fireWeapon(app, app.weapons[app.currentWeapon])
 
         if "r" in app.heldKeys:
-            switchWeapon(app)
+                    switchWeapon(app)
 
         return moved
 
