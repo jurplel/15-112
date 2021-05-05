@@ -37,7 +37,7 @@ def recvMsg(sock: socket.socket, buffer: bytearray):
     try:
         received = sock.recv(4096)
     except socket.timeout: 
-        return "EOF"
+        return
 
     if not received:
         return "EOF"
