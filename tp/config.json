@@ -4,7 +4,7 @@
     "drawFps": false,
     "drawCrosshair": true,
     "hudMargin": 40,
-    "ip": "0.0.0.0",
+    "ip": "localhost",
     "port": 52021,
     "musicVolume": 0.4,
     "effectVolume": 0.4
