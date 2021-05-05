@@ -1,3 +1,6 @@
+# 3D logic that is pretty general but not as general as dddutil.py
+# This file (and this game) revolves around the almighty Mesh class, which holds drawing logic, a bunch of useful methods, and loads of information
+
 # https://www.youtube.com/watch?v=ih20l3pJoeU
 # ^ This video was broadly followed and helped me to form the drawing loop and other foundational things
 # https://www.scratchapixel.com/ <-- Lots of stuff from there too

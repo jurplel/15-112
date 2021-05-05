@@ -1,3 +1,5 @@
+# 3D utility functions--just a way of splitting a previous huge file up
+
 import math
 
 import numpy as np

@@ -1,3 +1,8 @@
+# I did disable MVC violation detection. It worked fine up until I implemented another thread for the mp client.
+# I believe I recall Kian (my TP mentor if you don't know that somehow) mentioning that this is one of the limitations of cmu_112_graphics.
+# Test the program with them re-enabled if you want! Multiplayer just doesn't work because of the threading.
+
+
 # cmu_112_graphics.py
 # version 0.9.0
 

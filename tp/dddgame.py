@@ -1,3 +1,6 @@
+# Functions and classes that are specifically for 3D games and interact heavily with the main 3D code, 
+# but all of this stuff is definitely a level more specialized than ddd.py.
+
 from dataclasses import dataclass
 
 import random

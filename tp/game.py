@@ -1,3 +1,6 @@
+# The tkinter/cmu_112_graphics side of the singleplayer game mode. 
+# Most of the specific logic here is actually just for door closing as nearly all of the singleplayer stuff has been exported to fpsgameutil.
+
 from cmu_112_graphics import *
 
 import numpy as np

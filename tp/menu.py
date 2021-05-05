@@ -1,3 +1,5 @@
+# tkinter/cmu_112_graphics centric file that holds the menu logic and controls the menu app mode
+
 from tkinter import Text
 
 import fpsgameutil

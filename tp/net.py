@@ -1,7 +1,5 @@
-# Socket guidance from:
-# https://medium.com/hackernoon/socket-programming-in-python-client-server-and-peer-examples-a25c9782b584
-# https://docs.python.org/3/library/socket.html
-# https://stackoverflow.com/questions/5308080/python-socket-accept-nonblocking
+# Holds the server program and utility functions to be used by the client as well
+
 
 import select
 import socket
@@ -9,6 +7,11 @@ import pickle
 import copy
 
 import util
+
+# Some socket guidance from:
+# https://medium.com/hackernoon/socket-programming-in-python-client-server-and-peer-examples-a25c9782b584
+# https://docs.python.org/3/library/socket.html
+# https://stackoverflow.com/questions/5308080/python-socket-accept-nonblocking
 
 def connectToServer(ip = "0.0.0.0", port = 52021):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

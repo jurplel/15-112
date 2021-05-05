@@ -1,3 +1,6 @@
+# Holds the maze generation code (kruskal's)--simple enough
+
+
 # Source: http://weblog.jamisbuck.org/2011/1/3/maze-generation-kruskal-s-algorithm
 
 import random
@@ -65,50 +68,3 @@ def genMaze(rows, cols):
             break
 
     return graph
-
-# t means target
-def drawMazeMap(app, canvas, tx0, ty0, tx1, ty1, color, bgcolor, currentRoom, markerColor):
-    width = tx1-tx0
-    height = ty1-ty0
-    cellHeight = height / app.mazeRows
-    cellWidth = width / app.mazeCols
-    margin = min(cellWidth/8, cellHeight/8)
-
-    canvas.create_rectangle(tx0, ty0, tx1, ty1, fill=bgcolor, width=0)
-
-    # Copy pasted from mazedebug
-    for row in range(app.mazeRows):
-        for col in range(app.mazeCols):
-            # draw cells
-            x0 = tx0+cellWidth*col+margin
-            y0 = ty0+cellHeight*row+margin
-            x1 = tx0+cellWidth*col+cellWidth-margin
-            y1 = ty0+cellHeight*row+cellHeight-margin
-
-            canvas.create_rectangle(x0, y0, x1, y1, width=0, fill=color)
-
-            # draw inbetweeny bits
-            for dir in app.maze[row][col].dirs:
-                dx, dy = dir.value 
-                # m means modified
-                mx0, my0, mx1, my1 = x0, y0, x1, y1
-                if dx < 0:
-                    mx0 += margin*dx
-                elif dx > 0:
-                    mx1 += margin*dx
-
-                if dy < 0:
-                    my0 += margin*dy
-                elif dy > 0:
-                    my1 += margin*dy
-
-                canvas.create_rectangle(mx0, my0, mx1, my1, width=0, fill=color)
-
-            # You are here indicator
-            if currentRoom == (row, col):
-                cx = x0+(x1-x0)/2
-                cy = y0+(y1-y0)/2
-                r = min(cellHeight, cellWidth)/5
-                canvas.create_oval(cx-r, cy-r, cx+r, cy+r, fill=markerColor, outline="black")
-
-    return margin, margin

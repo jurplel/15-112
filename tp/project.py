@@ -1,3 +1,5 @@
+# Entry point--holds appstarted, loads config options, and manages mode switches
+
 from cmu_112_graphics import *
 
 from menu import *

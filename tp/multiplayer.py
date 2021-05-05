@@ -1,3 +1,5 @@
+# The tkinter/cmu_112_graphics side of the multiplayer game mode. As little duplication with game.py as possible. 
+
 from dddgame import *
 from fpsgameutil import *
 

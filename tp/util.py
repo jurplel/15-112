@@ -1,3 +1,5 @@
+# General purpose functions and classes for the whole program
+
 from enum import Enum
 
 import math, copy

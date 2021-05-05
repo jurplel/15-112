@@ -1,3 +1,5 @@
+# Literally just made to test the maze algorithm
+
 from cmu_112_graphics import *
 
 from maze import *
