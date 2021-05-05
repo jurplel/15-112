@@ -52,6 +52,7 @@ def initFps(app):
     app.health = 100
     app.dead = False
     app.movementSpeed = 20
+    app.turnSpeed = 12
     app.hurtCooldown = 400
     app.lastHurt = time.time()
 
