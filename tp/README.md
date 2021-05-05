@@ -17,12 +17,19 @@ Run `net.py` file to start a server.
 
 Edit configurable options in the config.json file if you wish (I recommend checking out the wireframe option!). This is also how you connect to servers.
 
-### Shortcut commands:
-There aren't any.
-
-### Controls:
-wasd | move
+### Main Controls:
+wasd (hold) | move
 
 r | switch weapons
 
-tab | run
+tab (hold) | run
+
+### Shortcut commands:
+There is no CLI interface. Debug controls are as follows:
+
+
+h | respawn
+
+n (hold) | noclip (singleplayer only)
+
+m | fully heal (singleplayer only)

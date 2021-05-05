@@ -83,9 +83,12 @@ def initFps(app):
     app.lastTimerTime = time.time()
 
     # Initialize default player/cam coordinates
-    app.cam = np.array([10, 4, 10, 0], dtype=np.float64)
+    app.defaultCam = np.array([10, 4, 10, 0], dtype=np.float64)
+    app.cam = copy.deepcopy(app.defaultCam)
     app.camDir = np.array([0, 0, 1, 0], dtype=np.float64)
     app.yaw = 0
+
+    app.noclip = False
 
     # Default light direction
     app.light = np.array([1, -0.5, 1, 0], dtype=np.float64)
@@ -540,7 +543,7 @@ def relativeCamMove(app, drz, drx):
     testCam += sidewaysCamDir * testdrx
 
     # You can't walk through walls
-    if (ddd.pointCollidesWithOtherMeshes(testCam, app.drawables, 1) or
+    if not app.noclip and (ddd.pointCollidesWithOtherMeshes(testCam, app.drawables, 1) or
         ddd.pointCollidesWithOtherMeshes(app.cam, app.drawables, 1)):
         app.cam = oldCam
         return False

@@ -73,6 +73,12 @@ def livingEnemiesInThisRoom(app):
 
 def game_keyPressed(app, event):
     key = event.key.lower()
+    if key == "h":
+        app.cam = copy.deepcopy(app.defaultCam)
+        setCurrentRoom(app)
+    elif key == "m":
+        app.health = 100
+
     if key == "escape":
         app.changeMode(app, "menu")
 
@@ -87,6 +93,8 @@ def processKeys(app, deltaTime):
     speed = app.movementSpeed*deltaTime
     turnSpeed = app.turnSpeed*speed
     if app.heldKeys:
+        app.noclip = "n" in app.heldKeys
+
         if "tab" in app.heldKeys:
             speed *= 2
             turnSpeed *= 1.5

@@ -39,6 +39,12 @@ def startMultiplayer(app):
     app.stateBacklog = []
     app.stateChanged = False
 
+    # Default pos out in space somewhere
+    app.cam = np.array([500, 500, 500, 1], dtype=np.float64)
+    app.dead = True
+    app.msgMovementAllowed = False
+    setNewViewMatrix(app)
+
     # Server connection and network setup
     try:
         app.conn = net.connectToServer(app.mpAddr, app.mpPort)
@@ -48,22 +54,20 @@ def startMultiplayer(app):
         app.netThread.start()
         # Show intro message for this gamemode
         showMsg(app, "Welcome to multiplayer.", 3)
+        app.respawnTimer = time.time()+1
+        app.respawnInvicibilityTil = time.time()+1
     except Exception as e:
         app.conn = None
         showMsg(app, f"Encountered error: {e}", 3, True, False)
-
+        app.respawnTimer = None
+        app.respawnInvicibilityTil = None
 
 
     # Multiplayer game logic
-
-    app.respawnTimer = None
-    app.respawnInvicibilityTil = None
     app.spawnPoints = [(np.array([10, 4, 10, 0], dtype=np.float64), 270),
-                       (np.array([90, 4, 190, 0], dtype=np.float64), 180)]
-                    #    (np.array([90, 4, 10, 0], dtype=np.float64), 90),
-                    #    (np.array([10, 4, 190, 0], dtype=np.float64), 180)]
-
-    spawnAtASpawnPoint(app)
+                       (np.array([90, 4, 190, 0], dtype=np.float64), 180),
+                       (np.array([90, 4, 10, 0], dtype=np.float64), 90),
+                       (np.array([10, 4, 190, 0], dtype=np.float64), 180)]
 
     pygame.mixer.music.load("res/d_e1m2.ogg")
     pygame.mixer.music.play(-1)
@@ -101,6 +105,7 @@ def refreshGameState(app, state):
         elif "fired" in key:
             app.weapons[state[key]].playSound()
 
+    # Update own health 
     for key in state:
         for idt in stateIdts:
             if str(idt) not in key and "health" in key:
@@ -180,7 +185,9 @@ def multiplayer_keyPressed(app, event):
     if key == "escape":
         tryEndingConnection(app)
         app.changeMode(app, "menu")
-        
+    elif key == "h":
+        respawn(app)
+
     app.heldKeys.add(key)
 
 def multiplayer_keyReleased(app, event):
@@ -201,7 +208,7 @@ def spawnAtASpawnPoint(app):
     loopCount = 0
     while True:
         loopCount += 1
-        spawnPoint = random.choice(app.spawnPoints)
+        spawnPoint = copy.deepcopy(random.choice(app.spawnPoints))
         app.cam = spawnPoint[0]
         app.yaw = spawnPoint[1]
         if not ddd.pointCollidesWithOtherMeshes(app.cam, app.drawables, 1):
