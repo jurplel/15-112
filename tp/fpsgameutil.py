@@ -146,7 +146,7 @@ def initShotgun(app):
 
     # Sprite
     spritesheet = app.loadImage("res/spas.png")
-    num = 4
+    num = 7
     sprites = spritesheetToSprite(spritesheet, 1, num, spritesheet.height, spritesheet.width/num, 2, app.scaleImage)
 
     # Sound
@@ -171,7 +171,7 @@ def initRifle(app):
 
     # Sprite
     spritesheet = app.loadImage("res/rifle.png")
-    num = 2
+    num = 3
     sprites = spritesheetToSprite(spritesheet, 1, num, spritesheet.height, spritesheet.width/num, 2, app.scaleImage)
 
     # Sound
