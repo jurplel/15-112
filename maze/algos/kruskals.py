@@ -13,18 +13,12 @@ class Kruskals(Maze):
         while True:
             self.oneStep()
 
-            done = self.updateDone()
-
-            if done:
+            if self.done:
                 break
 
         return self.maze
 
-
-
-    def oneStep(self):
-        super().oneStep()
-
+    def step(self):
         while True:
             # get random row, col, and direction to move in
             rRow, rCol = random.randrange(len(self.maze)), random.randrange(len(self.maze[0]))

@@ -6,11 +6,17 @@ class Maze:
         self.cols = cols
         self.history = []
         self.maze = make2dList(rows, cols, Node())
-        # https://stackabuse.com/python-how-to-flatten-list-of-lists/
         self.done = False
 
     def oneStep(self):
-        self.history.append(self.maze)
+        if self.done: 
+            return
+        else:
+            self.step()
+            self.history.append(self.maze)
+            self.done = self.updateDone()
+
+    def step(self):
         pass
 
     def genMaze(self):

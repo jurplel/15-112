@@ -2,7 +2,7 @@
 
 from cmu_112_graphics import *
 
-from algos.kruskals2 import *
+from algos.kruskals import *
 
 def setCellSizes(app):
     app.cellWidth = app.width / app.cols
@@ -13,10 +13,28 @@ def setCellSizes(app):
 def appStarted(app):
     app.rows = 16
     app.cols = 16
-    krus = Kruskals(app.rows, app.cols)
-    krus.genMaze()
-    app.maze = krus.maze
+    app.maze = Kruskals(app.rows, app.cols)
+    app.paused = False
+    app.timerDelay = 16
     setCellSizes(app)
+
+def keyPressed(app, event):
+    key = event.key.lower()
+    if key == "space":
+        app.paused = not app.paused
+    elif key == "left":
+        app.maze.undoGen()
+    elif key == "right":
+        app.maze.oneStep()
+    elif key == "f":
+        app.maze.genMaze()
+    elif key == "r":
+        app.maze = Kruskals(app.rows, app.cols)
+
+def timerFired(app):
+    if app.paused: return
+
+    app.maze.oneStep()
 
 def sizeChanged(app):
     setCellSizes(app)
@@ -33,7 +51,7 @@ def redrawAll(app, canvas):
             canvas.create_rectangle(x0, y0, x1, y1, width=0, fill="gray25")
 
             # draw inbetweeny bits
-            for dir in app.maze[row][col].dirs:
+            for dir in app.maze.maze[row][col].dirs:
                 dx, dy = dir.value 
                 # m means modified i guess idk this doesn't really matter
                 mx0, my0, mx1, my1 = x0, y0, x1, y1
