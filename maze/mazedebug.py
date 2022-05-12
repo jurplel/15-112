@@ -2,13 +2,13 @@
 
 from cmu_112_graphics import *
 
-from kruskals import *
+from algos.kruskals2 import *
 
 def setCellSizes(app):
     app.cellWidth = app.width / app.cols
     app.cellHeight = app.height / app.rows
-    app.marginWidth = app.cellWidth / 8
-    app.marginHeight = app.cellHeight / 8
+    app.marginWidth = app.cellWidth / 4
+    app.marginHeight = app.cellHeight / 4
 
 def appStarted(app):
     app.rows = 16

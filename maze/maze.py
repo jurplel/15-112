@@ -1,11 +1,12 @@
-from util import make2dList
+from util import make2dList, Node
 
 class Maze:
     def __init__(self, rows, cols):
         self.rows = rows
         self.cols = cols
         self.history = []
-        self.maze = make2dList(rows, cols, None)
+        self.maze = make2dList(rows, cols, Node())
+        # https://stackabuse.com/python-how-to-flatten-list-of-lists/
         self.done = False
 
     def oneStep(self):
