@@ -1,3 +1,5 @@
+import copy
+
 from util import make2dList, Node
 
 class Maze:
@@ -12,8 +14,8 @@ class Maze:
         if self.done: 
             return
         else:
+            self.history.append(copy.deepcopy(self.maze))
             self.step()
-            self.history.append(self.maze)
             self.done = self.updateDone()
 
     def step(self):
@@ -26,5 +28,5 @@ class Maze:
         pass
 
     def undoGen(self):
-        self.done = False
         self.maze = self.history.pop()
+        self.done = self.updateDone()
