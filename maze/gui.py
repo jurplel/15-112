@@ -14,7 +14,7 @@ def setCellSizes(app):
 def appStarted(app):
     app.rows = 16
     app.cols = 16
-    app.maze = Kruskals(app.rows, app.cols)
+    app.maze = Prims(app.rows, app.cols)
     app.paused = False
     app.timerDelay = 16
     setCellSizes(app)
@@ -30,7 +30,7 @@ def keyPressed(app, event):
     elif key == "f":
         app.maze.genMaze()
     elif key == "r":
-        app.maze = Kruskals(app.rows, app.cols)
+        app.maze = Prims(app.rows, app.cols)
 
 def timerFired(app):
     if app.paused: return
@@ -53,18 +53,18 @@ def redrawAll(app, canvas):
 
             # draw inbetweeny bits
             for cRow, cCol in app.maze.graph.getEdges((row, col)):
-                dy, dx = cRow-row, cCol-col
+                drow, dcol = cRow-row, cCol-col
                 # m means modified i guess idk this doesn't really matter
                 mx0, my0, mx1, my1 = x0, y0, x1, y1
-                if dx < 0:
-                    mx0 += app.marginWidth*dx
-                elif dx > 0:
-                    mx1 += app.marginWidth*dx
+                if drow < 0:
+                    my0 += app.marginWidth*drow
+                elif drow > 0:
+                    my1 += app.marginWidth*drow
 
-                if dy < 0:
-                    my0 += app.marginHeight*dy
-                elif dy > 0:
-                    my1 += app.marginHeight*dy
+                if dcol < 0:
+                    mx0 += app.marginHeight*dcol
+                elif dcol > 0:
+                    mx1 += app.marginHeight*dcol
 
                 canvas.create_rectangle(mx0, my0, mx1, my1, width=0, fill="gray25")
 

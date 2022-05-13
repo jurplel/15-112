@@ -16,7 +16,7 @@ class Maze:
         else:
             self.history.append(copy.deepcopy(self.graph))
             self.step()
-            self.done = self.updateDone()
+            self.updateDone()
 
     def step(self):
         pass
@@ -31,8 +31,13 @@ class Maze:
         return self.graph
 
     def updateDone(self):
-        pass
+        if self.connections == ((self.rows*self.cols)-1):
+            self.done = True
 
     def undoGen(self):
         self.graph = self.history.pop()
-        self.done = self.updateDone()
+        self.updateDone()
+
+    def isValid(self, row, col):
+        return self.rows > row >= 0 and self.cols > col >= 0
+

@@ -1,5 +1,7 @@
 import random
 
+from util import dirs
+
 from maze import Maze
 
 class Kruskals(Maze):
@@ -11,14 +13,13 @@ class Kruskals(Maze):
         while True:
             # get random row, col, and direction to move in
             rRow, rCol = random.randrange(self.rows), random.randrange(self.cols)
-            rDir = random.choice([(0, -1), (1, 0), (0, 1), (-1, 0)])
+            rDir = random.choice(dirs)
 
             # get target rows
             tRow, tCol = rRow+rDir[0], rCol+rDir[1]
 
             # validity check
-            valid = self.rows > tRow >= 0 and self.cols > tCol >= 0
-            if not valid:
+            if not self.isValid(tRow, tCol):
                 continue
 
 
@@ -35,9 +36,6 @@ class Kruskals(Maze):
     def updateDone(self):
         if self.connections == ((self.rows*self.cols)-1):
             self.done = True
-            return True
-
-        return False
 
     def undoGen(self):
         self.connections -= 1
