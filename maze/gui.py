@@ -43,6 +43,7 @@ def sizeChanged(app):
     setCellSizes(app)
 
 def redrawAll(app, canvas):
+    canvas.create_rectangle(0, 0, app.width, app.height, width=0, fill="gray25")
     for row in range(app.rows):
         for col in range(app.cols):
             # draw cells
@@ -51,7 +52,7 @@ def redrawAll(app, canvas):
             x1 = app.cellWidth*col+app.cellWidth-app.marginWidth
             y1 = app.cellHeight*row+app.cellHeight-app.marginHeight
 
-            canvas.create_rectangle(x0, y0, x1, y1, width=0, fill="gray25")
+            canvas.create_rectangle(x0, y0, x1, y1, width=0, fill="bisque2")
 
             # draw inbetweeny bits
             for cRow, cCol in app.maze.graph.getEdges((row, col)):
@@ -68,7 +69,7 @@ def redrawAll(app, canvas):
                 elif dcol > 0:
                     mx1 += app.marginHeight*dcol
 
-                canvas.create_rectangle(mx0, my0, mx1, my1, width=0, fill="gray25")
+                canvas.create_rectangle(mx0, my0, mx1, my1, width=0, fill="bisque2")
 
 
 def main():
