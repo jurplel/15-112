@@ -2,7 +2,8 @@
 
 from cmu_112_graphics import *
 
-from algos.kruskals import *
+from algos.kruskals import Kruskals
+from algos.prims import Prims
 
 def setCellSizes(app):
     app.cellWidth = app.width / app.cols
@@ -51,8 +52,8 @@ def redrawAll(app, canvas):
             canvas.create_rectangle(x0, y0, x1, y1, width=0, fill="gray25")
 
             # draw inbetweeny bits
-            for dir in app.maze.maze[row][col].dirs:
-                dx, dy = dir.value 
+            for cRow, cCol in app.maze.graph.getEdges((row, col)):
+                dy, dx = cRow-row, cCol-col
                 # m means modified i guess idk this doesn't really matter
                 mx0, my0, mx1, my1 = x0, y0, x1, y1
                 if dx < 0:
@@ -69,7 +70,7 @@ def redrawAll(app, canvas):
 
 
 def main():
-    width = 1024
+    width = 768
     height = 768
     runApp(width=width, height=height)
 

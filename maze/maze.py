@@ -1,20 +1,20 @@
 import copy
 
-from util import make2dList, Node
+from graph import Graph
 
 class Maze:
     def __init__(self, rows, cols):
         self.rows = rows
         self.cols = cols
         self.history = []
-        self.maze = make2dList(rows, cols, Node())
+        self.graph = Graph()
         self.done = False
 
     def oneStep(self):
         if self.done: 
             return
         else:
-            self.history.append(copy.deepcopy(self.maze))
+            self.history.append(copy.deepcopy(self.graph))
             self.step()
             self.done = self.updateDone()
 
@@ -22,11 +22,17 @@ class Maze:
         pass
 
     def genMaze(self):
-        pass
+        while True:
+            self.oneStep()
+
+            if self.done:
+                break
+
+        return self.graph
 
     def updateDone(self):
         pass
 
     def undoGen(self):
-        self.maze = self.history.pop()
+        self.graph = self.history.pop()
         self.done = self.updateDone()
