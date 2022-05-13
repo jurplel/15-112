@@ -36,6 +36,9 @@ class Kruskals(Maze):
     def updateDone(self):
         if self.connections == ((self.rows*self.cols)-1):
             self.done = True
+        else:
+            self.done = False
+
 
     def undoGen(self):
         self.connections -= 1

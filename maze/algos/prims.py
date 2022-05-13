@@ -41,6 +41,8 @@ class Prims(Maze):
     def updateDone(self):
         if len(self.frontier) == 0:
             self.done = True
+        else:
+            self.done = False
 
     def undoGen(self):
         super().undoGen()

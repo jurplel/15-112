@@ -31,8 +31,7 @@ class Maze:
         return self.graph
 
     def updateDone(self):
-        if self.connections == ((self.rows*self.cols)-1):
-            self.done = True
+        pass
 
     def undoGen(self):
         self.graph = self.history.pop()

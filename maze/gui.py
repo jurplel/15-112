@@ -4,6 +4,7 @@ from cmu_112_graphics import *
 
 from algos.kruskals import Kruskals
 from algos.prims import Prims
+from algos.ellers import Ellers
 
 def setCellSizes(app):
     app.cellWidth = app.width / app.cols
@@ -14,7 +15,7 @@ def setCellSizes(app):
 def appStarted(app):
     app.rows = 16
     app.cols = 16
-    app.maze = Prims(app.rows, app.cols)
+    app.maze = Ellers(app.rows, app.cols)
     app.paused = False
     app.timerDelay = 16
     setCellSizes(app)
@@ -30,7 +31,7 @@ def keyPressed(app, event):
     elif key == "f":
         app.maze.genMaze()
     elif key == "r":
-        app.maze = Prims(app.rows, app.cols)
+        app.maze = Ellers(app.rows, app.cols)
 
 def timerFired(app):
     if app.paused: return

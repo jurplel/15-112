@@ -17,20 +17,27 @@ class Graph:
         return self.edges.get(node, set())
 
     def makeParent(self, node: tuple, parent: tuple):
+        if node not in self.parents:
+            self.parents[node] = node
+
         rootOfNode = self.root(node)
+
         if rootOfNode not in self.parents:
             self.parents[rootOfNode] = None
         if parent not in self.edges:
             self.parents[parent] = None
+            
 
         self.parents[rootOfNode] = parent
 
     def root(self, node: tuple):
+        if node == None:
+            raise Exception("Somehow node is freakin' None")
         nodeParent = self.parents.get(node, node)
         if nodeParent == node:
             return node
         else:
-            return self.root(self.parents[node])
+            return self.root(nodeParent)
 
     def sharedRoot(self, node: tuple, other: tuple):
         return self.root(node) == self.root(other)
