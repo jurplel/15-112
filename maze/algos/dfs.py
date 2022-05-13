@@ -37,7 +37,6 @@ class DFS(Maze):
 
         if not found:
             self.backtrackstack.pop()
-            self.step()
 
 
     def updateDone(self):
